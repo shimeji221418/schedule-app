@@ -34,6 +34,41 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
             render status: 400, json: {data: @schedule.errors}
         end
     end
+
+    def team_schedules
+        startdate = Date.parse(params[:date]).beginning_of_day
+        enddate = (startdate + 6.day).end_of_day
+        ids = User.where(team_id: params[:team_id]).ids
+        schedules = Schedule.where(user_id: ids, start_at: startdate ... enddate)
+        if schedules
+            render status: 200, json: schedules
+        else
+            render status: 400, json:{data: "schedule is noting"}
+        end
+    end
+
+    def daily_schedules
+        startdate = Date.parse(params[:date]).beginning_of_day
+        enddate = Date.parse(params[:date]).end_of_day
+        ids = User.where(team_id: params[:team_id]).ids
+        schedules = Schedule.where(user_id: ids, start_at: startdate...enddate)
+        if schedules
+            render status: 200, json: schedules
+        else
+            render status: 400, json:{data: "schedule is noting"}
+        end
+    end
+
+    def my_schedules
+        startdate = Date.parse(params[:date]).beginning_of_day
+        enddate = (startdate + 6.day).end_of_day
+        schedules = Schedule.where(user_id: params[:user_id], start_at: startdate ... enddate)
+        if schedules
+            render status: 200, json: schedules
+        else
+            render status: 400, json:{data: "schedule is noting"}
+        end
+    end
     
 
     private

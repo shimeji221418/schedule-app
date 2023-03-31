@@ -46,12 +46,14 @@ const Login = () => {
       <Box>Login</Box>
       <form onSubmit={handleSubmit(handleonSubmit)}>
         <InputForm
+          name="email"
           title="email"
           type="email"
           handleChange={handleChange}
           message="emailが入力されていません"
         />
         <InputForm
+          name="password"
           title="password"
           type="password"
           handleChange={handleChange}

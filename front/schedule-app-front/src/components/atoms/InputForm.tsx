@@ -8,15 +8,19 @@ import {
 } from "react-hook-form";
 
 type Props = {
+  name: string;
   title: string;
   type: string;
   value?: string;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   message: string;
+  isReadOnly?: boolean;
+  width?: string;
 };
 
 const InputForm: FC<Props> = memo((props) => {
-  const { title, type, value, handleChange, message } = props;
+  const { name, title, type, value, handleChange, message, isReadOnly, width } =
+    props;
   const {
     register,
     formState: { errors },
@@ -27,14 +31,17 @@ const InputForm: FC<Props> = memo((props) => {
         <InputLeftAddon children={title} bg="cyan.600" color="white" />
         <Input
           value={value}
-          {...register(`${title}`, {
+          {...register(`${name}`, {
             required: `${message}`,
             onChange: (e) => handleChange(e),
           })}
-          id={title}
-          name={title}
+          id={name}
+          name={name}
           placeholder={title}
           type={type}
+          isReadOnly={isReadOnly}
+          disabled={isReadOnly}
+          width={width}
         />
       </InputGroup>
       {errors[title] && (

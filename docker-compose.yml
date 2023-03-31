@@ -10,7 +10,8 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_ROOT_PASSWORD: shimeji2214
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASS}
+      TZ: "Asia/Tokyo"
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     volumes:
       - mysql-data:/var/lib/mysql
@@ -35,6 +36,8 @@ services:
     environment:
       REDIS_URL: redis://redis:6379
       RAILS_ENV: development
+      MYSQL_ROOT_PASSWORD: ${ROOT_PASS}
+      TZ: Asia/Tokyo
   front:
     build:
       context: ./front

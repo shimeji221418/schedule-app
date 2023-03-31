@@ -18,11 +18,12 @@ import {
 import { NewUserType } from "@/types";
 import { useFormContext } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { useAuthContext } from "@/provider/AuthProvider";
+import { useGetTeams } from "@/hooks/useGetTeams";
 
 const SignUp = () => {
   const auth = getAuth(app);
   const router = useRouter();
-  const [teams, setTeams] = useState<Array<TeamType>>([]);
   const [newUser, setNewUser] = useState<NewUserType>({
     name: "",
     email: "",
@@ -30,6 +31,8 @@ const SignUp = () => {
     role: "",
     team_id: 1,
   });
+  const { loading, loginUser } = useAuthContext();
+  const { teams, getTeamsWithoutAuth } = useGetTeams();
   const roles = ["general", "admin"];
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -91,62 +94,56 @@ const SignUp = () => {
   };
 
   useEffect(() => {
-    const getTeams = async () => {
-      try {
-        const params: BaseClientWithoutAuthType = {
-          method: "get",
-          url: "/teams",
-        };
-        const res = await BaseClientWithoutAuth(params);
-        console.log(res.data);
-        setTeams(res.data);
-      } catch (e: any) {
-        console.log(e);
-      }
-    };
-
-    getTeams();
+    getTeamsWithoutAuth();
   }, []);
+
   return (
     <>
-      <div>SignUp</div>
-      <form onSubmit={handleSubmit(handleonSubmit)}>
-        <InputForm
-          title="name"
-          type="text"
-          handleChange={handleChange}
-          message="nameが入力されていません"
-        />
-        <InputForm
-          title="email"
-          type="email"
-          handleChange={handleChange}
-          message="emailが入力されていません"
-        />
-        <SelectForm
-          teams={teams}
-          title="select team"
-          name="team_id"
-          handleonChange={handleSelectChange}
-          message="所属チームが入力されていません"
-        />
-        <SelectForm
-          roles={roles}
-          title="select role"
-          name="role"
-          handleonChange={handleSelectChange}
-          message="ユーザー権限が入力されていません"
-        ></SelectForm>
-        <InputForm
-          title="password"
-          type="password"
-          handleChange={handleChange}
-          message="passwordが入力されていません"
-        />
-        <FormButton type="submit" color="cyan" size="md">
-          SignUp
-        </FormButton>
-      </form>
+      {!loading && loginUser == null && (
+        <>
+          <div>SignUp</div>
+          <form onSubmit={handleSubmit(handleonSubmit)}>
+            <InputForm
+              name="name"
+              title="name"
+              type="text"
+              handleChange={handleChange}
+              message="nameが入力されていません"
+            />
+            <InputForm
+              name="email"
+              title="email"
+              type="email"
+              handleChange={handleChange}
+              message="emailが入力されていません"
+            />
+            <SelectForm
+              teams={teams}
+              title="select team"
+              name="team_id"
+              handleonChange={handleSelectChange}
+              message="所属チームが入力されていません"
+            />
+            <SelectForm
+              roles={roles}
+              title="select role"
+              name="role"
+              handleonChange={handleSelectChange}
+              message="ユーザー権限が入力されていません"
+            ></SelectForm>
+            <InputForm
+              name="password"
+              title="password"
+              type="password"
+              handleChange={handleChange}
+              message="passwordが入力されていません"
+            />
+            <FormButton type="submit" color="cyan" size="md">
+              SignUp
+            </FormButton>
+          </form>
+        </>
+      )}
     </>
   );
 };

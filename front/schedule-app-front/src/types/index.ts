@@ -7,3 +7,13 @@ export type NewUserType = {
 };
 
 export type LoginUserType = Pick<NewUserType, "email" | "password">;
+
+export type StartTimeType = {
+  startHour: string;
+  startMinutes: string;
+};
+
+export type EndTimeType = {
+  endHour: string;
+  endMinutes: string;
+};

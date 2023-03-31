@@ -3,18 +3,12 @@ export type GetUserType = {
   name: string;
   email: string;
   uid: string;
-  role: number;
+  role: string;
   teamId: number;
-  schedules?: [
-    {
-      start_at: Date;
-      end_at: Date;
-      is_locked: boolean;
-      description: string;
-      user_id: number;
-      schedule_kind_id: number;
-    }
-  ];
+  team?: {
+    id: number;
+    name: string;
+  };
 };
 
 export type LoginUserType = GetUserType | null;

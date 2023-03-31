@@ -7,12 +7,13 @@ import React, {
   FC,
   ReactNode,
   SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { LoginUserType } from "@/types/api/user";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { GetUserType, LoginUserType } from "@/types/api/user";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { Text } from "@chakra-ui/react";
 
@@ -34,7 +35,7 @@ export const AuthProvider: FC<Props> = ({ children }) => {
   const auth = getAuth(app);
   const router = useRouter();
   const pathname = usePathname();
-  const [loginUser, setLoginUser] = useState(null);
+  const [loginUser, setLoginUser] = useState<LoginUserType>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const value = {
     loginUser,
@@ -43,6 +44,17 @@ export const AuthProvider: FC<Props> = ({ children }) => {
   };
   const isLoginOrSignUpPage: boolean =
     pathname === "/login" || pathname === "/signup";
+
+  const searchWord = "/schedule_kind/edit/";
+
+  const isAdminPage: boolean =
+    pathname === "/schedule_kind/new" || pathname!.indexOf(searchWord) > -1;
+
+  const isAdmin = () => {
+    if (isAdminPage && loginUser?.role === "general") {
+      router.push("/");
+    }
+  };
 
   useEffect(() => {
     const onCurrentUser = async () => {
@@ -78,21 +90,17 @@ export const AuthProvider: FC<Props> = ({ children }) => {
     unsubscribed();
   }, []);
 
-  if (loading) {
-    return (
-      <>
-        <Text>loading...</Text>
-      </>
-    );
-  } else {
-    return (
-      <>
-        <AuthContext.Provider value={value}>
-          {!loading && children}
-        </AuthContext.Provider>
-      </>
-    );
-  }
+  useEffect(() => {
+    isAdmin();
+  }, [loginUser]);
+
+  return (
+    <>
+      <AuthContext.Provider value={value}>
+        {!loading && children}
+      </AuthContext.Provider>
+    </>
+  );
 };
 
 export default AuthProvider;

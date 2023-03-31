@@ -3,238 +3,509 @@ import { getAuth, getIdToken, signOut } from "firebase/auth";
 import { app } from "../../firebase";
 import { useRouter } from "next/navigation";
 import { useAuthContext } from "@/provider/AuthProvider";
-import { useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import {
   addDays,
+  differenceInHours,
+  differenceInMinutes,
   eachDayOfInterval,
   endOfWeek,
   format,
+  startOfDay,
   startOfWeek,
   subDays,
 } from "date-fns";
-import { Box } from "@chakra-ui/react";
+import { Box, Button, Flex, InputGroup, useDisclosure } from "@chakra-ui/react";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
+import { scheduleType } from "@/types/api/schedule";
+import NewScheduleModal from "@/components/organisms/NewScheduleModal";
+import { TeamType } from "@/types/api/team";
+import { GetTaskType } from "@/types/api/schedule_kind";
+import EditScheduleModal from "@/components/organisms/EditScheduleModal";
+import { useGetTeams } from "@/hooks/useGetTeams";
+import SelectForm from "@/components/atoms/SelectForm";
+import { useGetSchedules } from "@/hooks/useGetSchedules";
+import { useGetTeamUsers } from "@/hooks/useGetTeamUsers";
+
+import { hours, times } from "../components/atoms";
+import InputForm from "@/components/atoms/InputForm";
+import FormButton from "@/components/atoms/FormButton";
 import { GetUserType } from "@/types/api/user";
+import ScheduleKinds from "@/components/molecules/ScheduleKinds";
+
+export type TargetUserType = {
+  id: number;
+  name: string;
+};
 
 export default function Home() {
   const auth = getAuth(app);
   const router = useRouter();
-  const [teamUser, setTeamUser] = useState<Array<GetUserType>>([]);
+  const today: Date = new Date();
+  const [date, setDate] = useState<Date>(new Date());
+  const startDate = () => format(startOfWeek(date), "yyyy-MM-dd");
+  const [targetSchedule, setTargetSchedule] = useState<scheduleType | null>(
+    null
+  );
+  const [tasks, setTasks] = useState<Array<GetTaskType>>([]);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDailyCalendar, setIsDailyCalendar] = useState(false);
   const handleLogout = async () => {
     await signOut(auth);
     router.push("/login");
     console.log(auth.currentUser);
   };
-  const { loginUser, loading, setLoading } = useAuthContext();
-  const today: Date = new Date();
-  const [date, setDate] = useState<Date>(today);
-  const nextWeek = () => setDate(addDays(date, 7));
-  const prevWeek = () => setDate(subDays(date, 7));
-  const thisWeek = () => setDate(today);
+
+  const { loginUser, loading } = useAuthContext();
+  const { teams, getTeamsWithAuth } = useGetTeams();
+  const [targetTeam, setTargetTeam] = useState<TeamType>({
+    id: 0,
+    name: "",
+  });
+  const { getTeamUsers, teamUser, setTeamUser } = useGetTeamUsers(
+    targetTeam.id
+  );
+  const { getSchedules, teamSchedules, getDailySchedules, dailySchedules } =
+    useGetSchedules(targetTeam.id, date);
+  const [targetDate, setTargetDate] = useState<string>("");
+  const [targetUser, setTargetUser] = useState<GetUserType>({
+    id: 0,
+    name: "",
+    email: "",
+    uid: "",
+    role: "",
+    teamId: 0,
+  });
+
+  const handleSelectChange = useCallback(
+    (e: ChangeEvent<HTMLSelectElement>) => {
+      const target = e.target;
+      const name = target.name;
+      const value = target.value;
+      setTargetTeam({ ...targetTeam, [name]: value });
+      console.log(targetTeam.id);
+    },
+    [targetTeam]
+  );
+
+  const nextWeek = useCallback(async () => {
+    try {
+      // const day = addDays(date, 7);
+      // const nextDate = format(startOfWeek(day), "yyyy-MM-dd");
+      // getSchedules({ team_id: targetTeam.id, date: nextDate });
+      setDate(addDays(date, 7));
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  const prevWeek = useCallback(async () => {
+    try {
+      // const day = subDays(date, 7);
+      // const prevDate = format(startOfWeek(day), "yyyy-MM-dd");
+      // getSchedules({ team_id: targetTeam.id, date: prevDate });
+      setDate(subDays(date, 7));
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  const thisWeek = useCallback(async () => {
+    try {
+      // const day = today;
+      // const thisDate = format(startOfWeek(day), "yyyy-MM-dd");
+      // getSchedules({ team_id: targetTeam.id, date: thisDate });
+      setDate(today);
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  const ChangeDate = useCallback(async () => {
+    try {
+      const selectDay = format(startOfWeek(date), "yyyy-MM-dd");
+      getSchedules({ team_id: targetTeam.id, date: selectDay });
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam]);
+
+  const nextDay = useCallback(async () => {
+    try {
+      // const day = addDays(date, 1);
+      // const nextDate = format(day, "yyyy-MM-dd");
+      // await getDailySchedules({ team_id: targetTeam.id, date: nextDate });
+      setDate(addDays(date, 1));
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  const prevDay = useCallback(async () => {
+    try {
+      // const day = subDays(date, 1);
+      // const prevDate = format(day, "yyyy-MM-dd");
+      // await getDailySchedules({ team_id: targetTeam.id, date: prevDate });
+      setDate(subDays(date, 1));
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  const toToday = useCallback(async () => {
+    try {
+      // if (loginUser) {
+      //   const day = format(today, "yyyy-MM-dd");
+      //   await getDailySchedules({ team_id: targetTeam.id, date: day });
+      setDate(today);
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam, date]);
+
+  // const ChangeDate2 = useCallback(async () => {
+  //   try {
+  //     if (loginUser) {
+  //       const selectDay = format(date, "yyyy-MM-dd");
+  //       setDate(selectDay);
+  //       // getDailySchedules({ team_id: targetTeam.id, date: selectDay });
+  //     }
+  //   } catch (e: any) {
+  //     console.log(e);
+  //   }
+  // }, [targetTeam, date]);
+
   const dates = eachDayOfInterval({
     start: startOfWeek(date),
     end: endOfWeek(date),
   });
 
+  const openSchedule = (day: Date, user: GetUserType) => {
+    setTargetDate(format(day, "yyyy-MM-dd"));
+    setTargetUser(user);
+    onOpen();
+  };
+
+  const openSchedule2 = (day: Date) => {
+    setTargetDate(format(day, "yyyy-MM-dd"));
+    onOpen();
+  };
+
+  const openEditSchedule = (schedule: scheduleType) => {
+    setTargetSchedule(schedule);
+    setIsModalOpen(true);
+  };
+  const closeEditSchedule = () => {
+    setIsModalOpen(false);
+  };
+
+  const ChangeDaily = async () => {
+    try {
+      if (loginUser) {
+        setIsDailyCalendar(true);
+        // await getDailySchedules({
+        //   team_id: loginUser.teamId,
+        //   date: format(today, "yyyy-MM-dd"),
+        // });
+        setDate(today);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const ChangeWeekly = () => {
+    setIsDailyCalendar(false);
+  };
+
+  const handleTeamChange = useCallback(async () => {
+    try {
+      getTeamUsers({ team_id: targetTeam.id });
+      getSchedules({ team_id: targetTeam.id, date: startDate() });
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [targetTeam]);
+
   useEffect(() => {
-    const getTeamUsers = async () => {
+    const getTask = async () => {
       try {
         const token = await auth.currentUser?.getIdToken(true);
         if (loginUser) {
-          const data = { team_id: loginUser.teamId };
+          const data = { user_id: loginUser.id };
           const props: BaseClientWithAuthType = {
             method: "get",
-            url: "/users/team_users",
+            url: `/schedule_kinds`,
             token: token!,
             params: data,
           };
           const res = await BaseClientWithAuth(props);
-          setTeamUser(res.data);
-          setLoading(false);
+          setTasks(res.data);
         }
       } catch (e: any) {
         console.log(e);
       }
     };
-    getTeamUsers();
+    getTask();
+
+    if (loginUser) {
+      getTeamUsers({ team_id: loginUser.teamId });
+      getTeamsWithAuth({ auth });
+      setTargetTeam({ ...targetTeam, id: loginUser.teamId });
+    }
   }, []);
 
   return (
     <>
-      {!loading && (
+      {!loading && loginUser && (
         <>
-          {teamUser.map((user) => (
-            <Box key={user.id}>{user.name}</Box>
-          ))}
+          {/* {teamSchedules.map((schedule) => (
+            <Box key={schedule.id}>
+              {format(new Date(schedule.startAt), "yyyy-MM-dd")}
+            </Box>
+          ))} */}
+          <PrimaryButton size="xs" color="cyan" onClick={ChangeWeekly}>
+            Weekly
+          </PrimaryButton>
+          <PrimaryButton size="xs" color="cyan" onClick={ChangeDaily}>
+            Daily
+          </PrimaryButton>
+
           <PrimaryButton size="xs" color="cyan" onClick={handleLogout}>
             logout
           </PrimaryButton>
-          <PrimaryButton size="xs" color="yellow" onClick={prevWeek}>
-            prevWeek
-          </PrimaryButton>
-          <PrimaryButton size="xs" color="pink" onClick={nextWeek}>
-            NextWeek
-          </PrimaryButton>
-          <PrimaryButton size="xs" color="green" onClick={thisWeek}>
-            ThisWeek
-          </PrimaryButton>
-          {dates.map((day, i) => (
-            <Box key={i}>{format(day, "MM-dd E")}</Box>
-          ))}
+
+          <InputGroup>
+            <SelectForm
+              teams={teams}
+              title="team"
+              name="id"
+              value={targetTeam.id}
+              message="チームが選択されていません"
+              handleonChange={handleSelectChange}
+            />
+            <PrimaryButton onClick={handleTeamChange} size="md" color="cyan">
+              更新
+            </PrimaryButton>
+          </InputGroup>
+          <ScheduleKinds tasks={tasks} />
+          <InputGroup>
+            <InputForm
+              type="date"
+              name="date"
+              title="date"
+              value={format(date, "yyyy-MM-dd")}
+              handleChange={(e) => {
+                setDate(new Date(e.target.value));
+              }}
+              message="日付を入力してください"
+            />
+            <PrimaryButton onClick={ChangeDate} color="cyan" size="md">
+              表示
+            </PrimaryButton>
+          </InputGroup>
+
+          <>
+            {!isDailyCalendar && (
+              <>
+                <PrimaryButton size="xs" color="yellow" onClick={prevWeek}>
+                  prevWeek
+                </PrimaryButton>
+                <PrimaryButton size="xs" color="pink" onClick={nextWeek}>
+                  NextWeek
+                </PrimaryButton>
+                <PrimaryButton size="xs" color="green" onClick={thisWeek}>
+                  ThisWeek
+                </PrimaryButton>
+
+                {teamUser.map((user) => (
+                  <Flex key={user.id}>
+                    <>{user.name}</>
+                    <Box key={user.id} border="1px" marginBottom={1}>
+                      <Flex>
+                        {dates.map((day, i) => (
+                          <Box key={i} borderRight="1px">
+                            <Box
+                              marginRight={2}
+                              onClick={() => openSchedule(day, user)}
+                              cursor="pointer"
+                            >
+                              {format(day, "M/d")}
+                            </Box>
+                            {teamSchedules.map(
+                              (schedule) =>
+                                format(day, "yyyy-MM-dd") ===
+                                  format(
+                                    new Date(schedule.startAt),
+                                    "yyyy-MM-dd"
+                                  ) &&
+                                user.id === schedule.userId && (
+                                  <Box
+                                    key={schedule.id}
+                                    cursor="pointer"
+                                    onClick={() => {
+                                      openEditSchedule(schedule);
+                                    }}
+                                  >
+                                    {format(new Date(schedule.startAt), "k:mm")}{" "}
+                                    - {format(new Date(schedule.endAt), "k:mm")}
+                                    {schedule.description}
+                                  </Box>
+                                )
+                            )}
+                          </Box>
+                        ))}
+                      </Flex>
+                    </Box>
+                  </Flex>
+                ))}
+                <NewScheduleModal
+                  isOpen={isOpen}
+                  onClose={onClose}
+                  date={targetDate}
+                  tasks={tasks}
+                  targetUser={targetUser}
+                  teamUser={teamUser}
+                />
+                <EditScheduleModal
+                  isOpen={isModalOpen}
+                  onClose={closeEditSchedule}
+                  schedule={targetSchedule}
+                  tasks={tasks}
+                  teamUser={teamUser}
+                />
+              </>
+            )}
+          </>
+          {isDailyCalendar && dailySchedules && (
+            <>
+              <PrimaryButton size="xs" color="pink" onClick={nextDay}>
+                NextDay
+              </PrimaryButton>
+              <PrimaryButton size="xs" color="yellow" onClick={prevDay}>
+                prevDay
+              </PrimaryButton>
+              <PrimaryButton size="xs" color="green" onClick={toToday}>
+                today
+              </PrimaryButton>
+              {/* <InputGroup>
+                <InputForm
+                  type="date"
+                  name="date"
+                  title="date"
+                  value={format(date, "yyyy-MM-dd")}
+                  handleChange={(e) => {
+                    setDate(new Date(e.target.value));
+                  }}
+                  message="日付を入力してください"
+                />
+                <PrimaryButton onClick={ChangeDate2} color="cyan" size="md">
+                  表示
+                </PrimaryButton>
+              </InputGroup> */}
+
+              <PrimaryButton
+                size="xs"
+                color="green"
+                onClick={() => openSchedule2(date)}
+              >
+                新規作成
+              </PrimaryButton>
+              {format(date, "yyyy-MM-dd")}
+              <Flex
+                width="100%"
+                justifyContent="flex-start"
+                marginLeft="20px"
+                marginTop="20px"
+              >
+                <Box marginTop="50px" padding={0} marginRight="20px">
+                  {times.map((hour, i) => (
+                    <Box key={i} marginBottom="56px">
+                      {hour}
+                    </Box>
+                  ))}
+                </Box>
+                <Flex>
+                  {teamUser.map((user) => (
+                    <Box key={user.id} marginRight="50px" position="relative">
+                      <Box
+                        onClick={() => openSchedule(date, user)}
+                        cursor="pointer"
+                      >
+                        {user.name}
+                      </Box>
+                      <Box zIndex="-1" position="absolute">
+                        {[...Array(11)].map((_, i) => (
+                          <Box
+                            height="40px"
+                            width="100px"
+                            borderTop="1px dashed"
+                            borderBottom="1px solid"
+                            marginBottom="40px"
+                            boxSizing="border-box"
+                            key={i}
+                          ></Box>
+                        ))}
+                      </Box>
+                      {dailySchedules.map(
+                        (schedule) =>
+                          user.id === schedule.userId && (
+                            <Box
+                              key={schedule.id}
+                              backgroundColor={schedule.scheduleKind?.color}
+                              position="absolute"
+                              width="100px"
+                              marginTop={`${
+                                ((differenceInMinutes(
+                                  new Date(schedule.startAt),
+                                  startOfDay(new Date(schedule.startAt))
+                                ) -
+                                  480) *
+                                  80) /
+                                  60 +
+                                40
+                              }px`}
+                              height={`${
+                                (differenceInMinutes(
+                                  new Date(schedule.endAt),
+                                  new Date(schedule.startAt)
+                                ) *
+                                  80) /
+                                60
+                              }px`}
+                              onClick={() => {
+                                openEditSchedule(schedule);
+                              }}
+                            >
+                              {schedule.description}
+                            </Box>
+                          )
+                      )}
+                    </Box>
+                  ))}
+                </Flex>
+              </Flex>
+              <NewScheduleModal
+                isOpen={isOpen}
+                onClose={onClose}
+                date={targetDate}
+                tasks={tasks}
+                targetUser={targetUser}
+                teamUser={teamUser}
+              />
+              <EditScheduleModal
+                isOpen={isModalOpen}
+                onClose={closeEditSchedule}
+                schedule={targetSchedule}
+                tasks={tasks}
+                teamUser={teamUser}
+              />
+            </>
+          )}
         </>
       )}
     </>
   );
 }
-
-// import {format} from 'date-fns'
-// import {eachDayOfInterval} from 'date-fns'
-// import eachWeekOfInterval from 'date-fns/eachWeekendOfInterval'
-// import endOfWeek from 'date-fns/endOfWeek'
-// import startOfWeek from 'date-fns/startOfWeek'
-// import addDays from 'date-fns/addDays'
-// import subDays from 'date-fns/subDays'
-// import { useState } from 'react'
-// import styles from './calendar.module.scss'
-// import Modals from './Modals.js'
-// import addHours from 'date-fns/addHours'
-
-// const Calendar =()=>{
-
-//     const today = new Date()
-//     const now = format(today, 'yyyy-MM-dd E')
-//     const newdate = addDays(today , 7)
-//     const afteraweek = format(newdate , 'yyyy-MM-dd E')
-
-//     const [date , setdate] = useState(today)
-//     const [isModalOpen , setIsModalOpen] = useState({ isOpen: false, startDate: null })
-//     const [checked , setChecked] = useState(today)
-//     const [slots, setSlots] = useState([])
-//     // {startDate: new Date('2022-06-25 10:00')}
-
-//     const handleOnSubmit = (newDay)=>{
-//       const newSlot = {newDay}
-//       setSlots([...slots , newSlot])
-//       console.log(slots)
-//       setIsModalOpen({isOpen: false, startDate: null})
-//     }
-
-//     const dates = eachDayOfInterval(
-//           {start: startOfWeek(date), end: endOfWeek(date)}
-//           )
-
-//     const addweek = () =>{
-//       setdate(addDays(date , 7))
-//     }
-
-//     const subweek =()=>{
-//       setdate(subDays(date , 7))
-//     }
-
-//     const currentweek =()=>{
-//       setdate(today)
-//     }
-
-//     const openSchedule =(day,index)=>{
-//       setIsModalOpen({isOpen: true,startDate: addHours(day , index)})
-//       console.log(addHours(day,index))
-
-//     }
-
-//     const closeSchedule =()=>{
-//       setIsModalOpen(false)
-//     }
-
-//     const handleChecked =()=>{
-//       setChecked(true)
-//     }
-
-//     const handleUnChecked =()=>{
-//       setChecked(false)
-//     }
-
-//   return(
-
-//     <div className={styles.container}>
-//         <h1 className={styles.title}>{now}</h1>
-//         <h2>{afteraweek}</h2>
-//         <div>
-//         <button onClick={subweek}>一週前</button>
-//         <button onClick={currentweek}>現在</button>
-//         <button onClick={addweek}>一週後</button>
-//         </div>
-
-//       <div style={{float:"left",position:"relative",marginTop:"40px"}}>
-//         {[...Array(24)].map((_,i)=>(
-//           <div  key={i} style={{marginBottom:"30px"}}>
-//             {`${i}:00`}
-//           </div>
-//         ))}
-//       </div>
-
-//       {dates.map((day,e)=>(
-//       <div  key={e} style={{marginTop:"0" ,float:"left"}}>
-//         <div  className={styles.week}>
-//           {format(day , 'MM-dd E')}
-//         </div>
-//           <div style={{ position:'relative'}}>
-//             {[...Array(24)].map((_,index)=>
-//             <div key={index} onClick={()=>{openSchedule(day, index)}} className={styles.sample1}></div>)}
-//             <div style={{width:"100px", height:"55px", backgroundColor:"rgba(42, 199, 63,.5)", position:"absolute",top:"55px"}}></div>
-//           </div>
-//       </div>
-
-//     ))}
-
-// <div>{slots.map((slot)=><p>{format(slot.newDay, 'yyyy-MM-dd E p')}</p>)}</div>
-
-//     <Modals isModalOpen={isModalOpen} closeSchedule={closeSchedule} handleChecked={handleChecked} handleUnChecked={handleUnChecked} OnSubmit={handleOnSubmit}/>
-
-//   </div>
-
-//   )
-
-// }
-
-// import Modal from "react-bootstrap/Modal";
-// import { Button } from "react-bootstrap";
-// import { addHours, format } from "date-fns";
-// import styles from "./Modals.module.scss";
-
-// const Modals = ({isModalOpen , closeSchedule, handleChecked, handleUnChecked, OnSubmit})=>{
-
-//     if(isModalOpen.isOpen){
-//         return(
-//           <div className={styles.modal}>
-//             <Modal.Dialog>
-//               <Modal.Header onClick={closeSchedule} closeButton>
-//                 <Modal.Title>個別スロット設定</Modal.Title>
-//               </Modal.Header>
-
-//                 <Modal.Body>
-//                   <label>取材可
-//                     <input type='radio' name='aradio' onClick={()=>handleChecked(isModalOpen)}/>
-//                   </label>
-//                     <label>
-//                       取材NG<input type='radio' name='aradio' onClick={handleUnChecked}/>
-//                     </label>
-//                       <p>期間</p>
-//                         <p>{format(isModalOpen.startDate, 'yyyy-MM-dd E')}</p>
-//                           <p>時間帯</p>
-//                             <p>{format(isModalOpen.startDate,'p')}～{format(addHours(isModalOpen.startDate , 1),'p')}</p>
-//                 </Modal.Body>
-
-//                 <Modal.Footer>
-//                   <Button onClick={closeSchedule} variant="secondary">Close</Button>
-//                   <Button variant="primary" onClick={()=>OnSubmit(isModalOpen.startDate)}>Save</Button>
-//                 </Modal.Footer>
-//               </Modal.Dialog>
-//           </div>
-
-//         )
-//     }
-
-// }
-
-// export default Modals

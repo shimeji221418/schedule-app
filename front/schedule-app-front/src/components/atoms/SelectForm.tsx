@@ -1,6 +1,8 @@
+import { GetTaskType } from "@/types/api/schedule_kind";
 import { TeamType } from "@/types/api/team";
-import { Select, Text } from "@chakra-ui/react";
-import React, { ChangeEvent, FC, memo, useState } from "react";
+import { GetUserType } from "@/types/api/user";
+import { InputGroup, InputLeftAddon, Select, Text } from "@chakra-ui/react";
+import React, { ChangeEvent, FC, memo, useEffect, useState } from "react";
 import {
   DeepMap,
   FieldError,
@@ -11,48 +13,92 @@ import {
 type Props = {
   teams?: TeamType[];
   roles?: string[];
+  tasks?: GetTaskType[];
+  teamUsers?: GetUserType[];
   title: string;
   name: string;
   handleonChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   message: string;
+  value?: number;
+  isReadOnly?: boolean;
 };
 
 const SelectForm: FC<Props> = memo((props) => {
-  const { teams, title, name, handleonChange, message, roles } = props;
+  const {
+    teams,
+    title,
+    name,
+    handleonChange,
+    message,
+    roles,
+    tasks,
+    value,
+    teamUsers,
+    isReadOnly,
+  } = props;
   const {
     register,
     formState: { errors },
+    setValue,
   } = useFormContext();
+
+  useEffect(() => {
+    setValue(`${name}`, value);
+  }, []);
   return (
     <>
-      <Select
-        {...register(`${name}`, {
-          required: `${message}`,
-          onChange: (e) => handleonChange(e),
-        })}
-        placeholder={title}
-        name={name}
-        onChange={(e) => handleonChange(e)}
-      >
-        {teams && (
-          <>
-            {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </>
-        )}
-        {roles && (
-          <>
-            {roles.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </>
-        )}
-      </Select>
+      <InputGroup>
+        <InputLeftAddon children={title} bg="cyan.600" color="white" />
+        <Select
+          value={value}
+          {...register(`${name}`, {
+            required: `${message}`,
+            onChange: (e) => handleonChange(e),
+          })}
+          name={name}
+          onChange={(e) => handleonChange(e)}
+          disabled={isReadOnly}
+          // placeholder={title}
+        >
+          {teams && (
+            <>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </>
+          )}
+          {roles && (
+            <>
+              {roles.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </>
+          )}
+          {tasks && (
+            <>
+              {tasks.map((task) => (
+                <option key={task.id} value={task.id}>
+                  {task.name}
+                </option>
+              ))}
+            </>
+          )}
+          {teamUsers && (
+            <>
+              {teamUsers.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.name}
+                </option>
+              ))}
+            </>
+          )}
+        </Select>
+      </InputGroup>
+
       {errors[name] && (
         <Text>{`${
           (errors[name] as DeepMap<FieldValues, FieldError>).message
