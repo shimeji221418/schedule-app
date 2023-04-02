@@ -37,7 +37,9 @@ export const useGetTeamUsers = (teamId: number) => {
   );
 
   useEffect(() => {
-    getTeamUsers({ team_id: teamId });
-  }, [teamId]);
+    if (loginUser && teamId) {
+      getTeamUsers({ team_id: teamId });
+    }
+  }, [loginUser, teamId]);
   return { getTeamUsers, teamUser, setTeamUser };
 };

@@ -15,8 +15,9 @@ type PropsType = {
   startDate: string;
 };
 
-export const useGetSchedules = (id: number, date: Date) => {
+export const useGetSchedules = (id: number) => {
   const auth = getAuth(app);
+  const [date, setDate] = useState<Date>(new Date());
   const { loginUser } = useAuthContext();
   const [reload, setReload] = useState<boolean>(true);
   const [teamSchedules, setTeamSchedules] = useState<Array<scheduleType>>([]);
@@ -73,7 +74,7 @@ export const useGetSchedules = (id: number, date: Date) => {
   );
 
   useEffect(() => {
-    if (loginUser && date) {
+    if (loginUser && date && id) {
       const day = format(date, "yyyy-MM-dd");
       const startDate = format(startOfWeek(date), "yyyy-MM-dd");
 
@@ -86,10 +87,9 @@ export const useGetSchedules = (id: number, date: Date) => {
     getSchedules,
     teamSchedules,
     setTeamSchedules,
-    reload,
-    setReload,
-    getDailySchedules,
     dailySchedules,
     setDailySchedules,
+    date,
+    setDate,
   };
 };

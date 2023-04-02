@@ -94,13 +94,17 @@ export const AuthProvider: FC<Props> = ({ children }) => {
     isAdmin();
   }, [loginUser]);
 
-  return (
-    <>
-      <AuthContext.Provider value={value}>
-        {!loading && children}
-      </AuthContext.Provider>
-    </>
-  );
+  if (loading) {
+    return <>Loading...</>;
+  } else {
+    return (
+      <>
+        <AuthContext.Provider value={value}>
+          {!loading && children}
+        </AuthContext.Provider>
+      </>
+    );
+  }
 };
 
 export default AuthProvider;
