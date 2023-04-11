@@ -45,10 +45,9 @@ export const AuthProvider: FC<Props> = ({ children }) => {
   const isLoginOrSignUpPage: boolean =
     pathname === "/login" || pathname === "/signup";
 
-  const searchWord = "/schedule_kind/edit/";
+  const searchWord = "/admin";
 
-  const isAdminPage: boolean =
-    pathname === "/schedule_kind/new" || pathname!.indexOf(searchWord) > -1;
+  const isAdminPage: boolean = pathname!.indexOf(searchWord) > -1;
 
   const isAdmin = () => {
     if (isAdminPage && loginUser?.role === "general") {

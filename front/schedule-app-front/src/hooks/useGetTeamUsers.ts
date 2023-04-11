@@ -36,9 +36,28 @@ export const useGetTeamUsers = (teamId: number) => {
     [teamUser, loginUser]
   );
 
+  const GetAllUsers = useCallback(async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken(true);
+      const props: BaseClientWithAuthType = {
+        method: "get",
+        url: "/users",
+        token: token!,
+      };
+      const res = await BaseClientWithAuth(props);
+      console.log(res.data);
+      setTeamUser(res.data);
+    } catch (e: any) {
+      console.log(e);
+    }
+  }, [teamUser]);
+
   useEffect(() => {
-    if (loginUser && teamId) {
+    if (loginUser && teamId != 0) {
       getTeamUsers({ team_id: teamId });
+    }
+    if (loginUser && teamId == 1) {
+      GetAllUsers();
     }
   }, [loginUser, teamId]);
   return { getTeamUsers, teamUser, setTeamUser };

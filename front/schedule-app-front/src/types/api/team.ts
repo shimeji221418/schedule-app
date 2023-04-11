@@ -12,3 +12,5 @@ export type TeamType = {
     }
   ];
 };
+
+export type NewTeamType = Pick<TeamType, "name">;

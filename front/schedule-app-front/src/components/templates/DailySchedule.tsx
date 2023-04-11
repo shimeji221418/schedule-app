@@ -12,8 +12,8 @@ import {
 import React, { Dispatch, FC, memo, SetStateAction, useCallback } from "react";
 import { times } from "../atoms";
 import PrimaryButton from "../atoms/PrimaryButton";
-import EditScheduleModal from "../organisms/EditScheduleModal";
-import NewScheduleModal from "../organisms/NewScheduleModal";
+import EditScheduleModal from "../organisms/modal/EditScheduleModal";
+import NewScheduleModal from "../organisms/modal/NewScheduleModal";
 import { TeamType } from "@/types/api/team";
 import { scheduleType } from "@/types/api/schedule";
 import { GetUserType } from "@/types/api/user";

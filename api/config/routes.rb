@@ -8,8 +8,10 @@ Rails.application.routes.draw do
     namespace "v1" do
       get "users/current" => "users#current"
       get "users/team_users" => "users#team_users"
-      get "schedules/team_schedules" =>"schedules#team_schedules"
-      get "schedules/daily_schedules" => "schedules#daily_schedules"
+      get "schedules/weekly_team_schedules" =>"schedules#weekly_team_schedules"
+      get "schedules/daily_team_schedules" => "schedules#daily_team_schedules"
+      get "schedules/weekly_custum_schedules" =>"schedules#weekly_custum_schedules"
+      get "schedules/daily_custum_schedules" => "schedules#daily_custum_schedules"
       get "schedules/my_schedules" => "schedules#my_schedules"
       resources :teams
       resources :users, only:[:index, :show, :update, :destroy]

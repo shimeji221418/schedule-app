@@ -35,11 +35,10 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
         end
     end
 
-    def team_schedules
-        startdate = Date.parse(params[:date]).beginning_of_day
-        enddate = (startdate + 6.day).end_of_day
+    def weekly_team_schedules
+        start_date, end_date = get_start_and_end_date
         ids = User.where(team_id: params[:team_id]).ids
-        schedules = Schedule.where(user_id: ids, start_at: startdate ... enddate)
+        schedules = Schedule.where(user_id: ids, start_at: start_date...end_date)
         if schedules
             render status: 200, json: schedules
         else
@@ -47,11 +46,36 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
         end
     end
 
-    def daily_schedules
-        startdate = Date.parse(params[:date]).beginning_of_day
-        enddate = Date.parse(params[:date]).end_of_day
+    def weekly_custum_schedules
+        start_date, end_date = get_start_and_end_date
+        ids = params[:user_ids].split(',') # "?user_ids=1,2,4"
+        pp "====="
+        pp ids
+        pp "====="
+        schedules = Schedule.where(user_id: ids, start_at: start_date...end_date)
+        pp schedules
+        if schedules
+            render status: 200, json: schedules
+        else
+            render status: 400, json:{data: "schedule is noting"}
+        end
+    end
+
+    def daily_team_schedules
+        start_date, end_date = get_start_and_end_date(false)
         ids = User.where(team_id: params[:team_id]).ids
-        schedules = Schedule.where(user_id: ids, start_at: startdate...enddate)
+        schedules = Schedule.where(user_id: ids, start_at: start_date...end_date)
+        if schedules
+            render status: 200, json: schedules
+        else
+            render status: 400, json:{data: "schedule is noting"}
+        end
+    end
+
+    def daily_custum_schedules
+        start_date, end_date = get_start_and_end_date(false)
+        ids = params[:user_ids].split(',')
+        schedules = Schedule.where(user_id: ids, start_at: start_date...end_date)
         if schedules
             render status: 200, json: schedules
         else
@@ -60,9 +84,8 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
     end
 
     def my_schedules
-        startdate = Date.parse(params[:date]).beginning_of_day
-        enddate = (startdate + 6.day).end_of_day
-        schedules = Schedule.where(user_id: params[:user_id], start_at: startdate ... enddate)
+        start_date, end_date = get_start_and_end_date
+        schedules = Schedule.where(user_id: params[:user_id], start_at: start_date ... end_date)
         if schedules
             render status: 200, json: schedules
         else
@@ -78,6 +101,12 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
     end
 
     def schedule_params
-        params.require(:schedule).permit(:start_at, :end_at, :is_locked, :description, :user_id, :schedule_kind_id)
+        params.require(:schedule).permit(:start_at, :end_at, :is_locked, :description, :user_id, :schedule_kind_id,:user_ids)
+    end
+
+    def get_start_and_end_date(is_weekly=true)
+        start_date = Date.parse(params[:date]).beginning_of_day
+        end_date = is_weekly ? (start_date + 6.day).end_of_day : Date.parse(params[:date]).end_of_day
+        [start_date, end_date]
     end
 end

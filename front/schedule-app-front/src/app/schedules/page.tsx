@@ -12,7 +12,7 @@ import {
   startOfWeek,
   subDays,
 } from "date-fns";
-import { Alert, Box, Flex, InputGroup, useDisclosure } from "@chakra-ui/react";
+import { Box, Flex, InputGroup, useDisclosure } from "@chakra-ui/react";
 import ja from "date-fns/locale/ja";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
@@ -20,123 +20,47 @@ import { times } from "@/components/atoms";
 import { scheduleType } from "@/types/api/schedule";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
 import InputForm from "@/components/atoms/InputForm";
-import NewScheduleModal from "@/components/organisms/NewScheduleModal";
-import { GetTaskType } from "@/types/api/schedule_kind";
-import { GetUserType, LoginUserType } from "@/types/api/user";
-import { Console } from "console";
-import EditScheduleModal from "@/components/organisms/EditScheduleModal";
+import NewScheduleModal from "@/components/organisms/modal/NewScheduleModal";
+import EditScheduleModal from "@/components/organisms/modal/EditScheduleModal";
 import { useGetTeamUsers } from "@/hooks/useGetTeamUsers";
 import ScheduleKinds from "@/components/molecules/ScheduleKinds";
+import { useGetTasks } from "@/hooks/useGetTasks";
+import { useOpenSchedule } from "@/hooks/schedule/useOpenSchedule";
+import { useOpenEditSchedule } from "@/hooks/schedule/useOpenEditSchedule";
+import { useGetAllUsers } from "@/hooks/useAllUsers";
 
 const MySchedule = () => {
   const auth = getAuth(app);
-  const { loginUser, loading, setLoading } = useAuthContext();
-  const { getTeamUsers, teamUser } = useGetTeamUsers();
-  const [tasks, setTasks] = useState<Array<GetTaskType>>([]);
-  const { isOpen, onClose, onOpen } = useDisclosure();
   const today: Date = new Date();
+  const { isOpen, onClose, onOpen } = useDisclosure();
+  const { loginUser, loading } = useAuthContext();
+  const { targetDate, targetUser, openSchedule } = useOpenSchedule({ onOpen });
+  const { getTeamUsers, teamUser } = useGetTeamUsers(targetUser.teamId);
+  const { targetSchedule, isModalOpen, openEditSchedule, closeEditSchedule } =
+    useOpenEditSchedule();
+  const { tasks, getTask } = useGetTasks({ auth, loginUser });
   const [date, setDate] = useState<Date>(today);
   const [mySchedules, setMySchedules] = useState<Array<scheduleType>>([]);
   const dates = eachDayOfInterval({
     start: startOfWeek(date),
     end: endOfWeek(date),
   });
-  const [targetDate, setTargetDate] = useState<string>("");
-  const [targetUser, setTargetUser] = useState<GetUserType>({
-    id: 0,
-    name: "",
-    email: "",
-    uid: "",
-    role: "",
-    teamId: 0,
-  });
-  const [targetSchedule, setTargetSchedule] = useState<scheduleType | null>(
-    null
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const nextWeek = useCallback(async () => {
-    try {
-      if (loginUser) {
-        const day = addDays(date, 7);
-        const nextDate = format(startOfWeek(day), "yyyy-MM-dd");
-        const token = await auth.currentUser?.getIdToken(true);
-        const data = { user_id: loginUser.id, date: nextDate };
-        const props: BaseClientWithAuthType = {
-          method: "get",
-          url: "/schedules/my_schedules",
-          token: token!,
-          params: data,
-        };
-        const res = await BaseClientWithAuth(props);
-        setMySchedules(res.data);
-        setDate(addDays(date, 7));
-      }
-    } catch (e: any) {
-      console.log(e);
-    }
+    setDate(addDays(date, 7));
   }, [mySchedules, date]);
 
   const prevWeek = useCallback(async () => {
-    try {
-      if (loginUser) {
-        const day = subDays(date, 7);
-        const prevDate = format(startOfWeek(day), "yyyy-MM-dd");
-        const token = await auth.currentUser?.getIdToken(true);
-        const data = { user_id: loginUser.id, date: prevDate };
-        const props: BaseClientWithAuthType = {
-          method: "get",
-          url: "/schedules/my_schedules",
-          token: token!,
-          params: data,
-        };
-        const res = await BaseClientWithAuth(props);
-        setMySchedules(res.data);
-        setDate(subDays(date, 7));
-      }
-    } catch (e: any) {
-      console.log(e);
-    }
+    setDate(subDays(date, 7));
   }, [mySchedules, date]);
 
-  const changeDate = useCallback(async () => {
-    try {
-      if (loginUser) {
-        const selectDate = format(startOfWeek(date), "yyyy-MM-dd");
-        const token = await auth.currentUser?.getIdToken(true);
-        const data = { user_id: loginUser.id, date: selectDate };
-        const props: BaseClientWithAuthType = {
-          method: "get",
-          url: "/schedules/my_schedules",
-          token: token!,
-          params: data,
-        };
-        const res = await BaseClientWithAuth(props);
-        setMySchedules(res.data);
-      }
-    } catch (e: any) {
-      console.log(e);
-    }
-  }, [mySchedules, date]);
-
-  const openSchedule = (day: Date) => {
-    setTargetDate(format(day, "yyyy-MM-dd"));
-    onOpen();
-  };
-
-  const openEditSchedule = (schedule: scheduleType) => {
-    setTargetSchedule(schedule);
-    setIsModalOpen(true);
-  };
-  const closeEditSchedule = () => {
-    setIsModalOpen(false);
-  };
   useEffect(() => {
     const getMySchedule = async () => {
       try {
         if (loginUser) {
+          const startDate = format(startOfWeek(date), "yyyy-MM-dd");
           const token = await auth.currentUser?.getIdToken(true);
-          const data = { user_id: loginUser.id, date: date };
+          const data = { user_id: loginUser.id, date: startDate };
           const props: BaseClientWithAuthType = {
             method: "get",
             url: "/schedules/my_schedules",
@@ -145,27 +69,7 @@ const MySchedule = () => {
           };
           const res = await BaseClientWithAuth(props);
           setMySchedules(res.data);
-          setTargetUser(loginUser);
           console.log(res.data);
-        }
-      } catch (e: any) {
-        console.log(e);
-      }
-    };
-
-    const getTask = async () => {
-      try {
-        const token = await auth.currentUser?.getIdToken(true);
-        if (loginUser) {
-          const data = { user_id: loginUser.id };
-          const props: BaseClientWithAuthType = {
-            method: "get",
-            url: `/schedule_kinds`,
-            token: token!,
-            params: data,
-          };
-          const res = await BaseClientWithAuth(props);
-          setTasks(res.data);
         }
       } catch (e: any) {
         console.log(e);
@@ -173,14 +77,15 @@ const MySchedule = () => {
     };
     getTask();
     getMySchedule();
+
     if (loginUser) {
       getTeamUsers({ team_id: loginUser?.teamId });
     }
-  }, []);
+  }, [loginUser, date]);
 
   return (
     <>
-      {!loading && (
+      {!loading && loginUser && (
         <>
           <ScheduleKinds tasks={tasks} />
           <Flex justifyContent="center" textAlign="center">
@@ -204,10 +109,6 @@ const MySchedule = () => {
                 width="auto"
                 message="日付を入力してください"
               />
-
-              <PrimaryButton onClick={changeDate} color="cyan" size="md">
-                表示
-              </PrimaryButton>
             </InputGroup>
           </Flex>
 
@@ -242,7 +143,7 @@ const MySchedule = () => {
                         zIndex="-1"
                         cursor="pointer"
                         onClick={() => {
-                          openSchedule(day);
+                          openSchedule(day, loginUser);
                         }}
                       ></Box>
                     ))}

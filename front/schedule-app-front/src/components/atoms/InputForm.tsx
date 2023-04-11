@@ -1,5 +1,5 @@
 import { Input, InputGroup, InputLeftAddon, Text } from "./index";
-import React, { ChangeEvent, FC, memo } from "react";
+import React, { ChangeEvent, FC, memo, useEffect } from "react";
 import {
   DeepMap,
   FieldError,
@@ -14,17 +14,33 @@ type Props = {
   value?: string;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   message: string;
+  isDisabled?: boolean;
   isReadOnly?: boolean;
   width?: string;
 };
 
 const InputForm: FC<Props> = memo((props) => {
-  const { name, title, type, value, handleChange, message, isReadOnly, width } =
-    props;
+  const {
+    name,
+    title,
+    type,
+    value,
+    handleChange,
+    message,
+    isReadOnly,
+    width,
+    isDisabled,
+  } = props;
   const {
     register,
     formState: { errors },
+    setValue,
   } = useFormContext();
+
+  useEffect(() => {
+    setValue(`${name}`, value);
+  }, []);
+
   return (
     <>
       <InputGroup>
@@ -40,13 +56,13 @@ const InputForm: FC<Props> = memo((props) => {
           placeholder={title}
           type={type}
           isReadOnly={isReadOnly}
-          disabled={isReadOnly}
+          disabled={isDisabled}
           width={width}
         />
       </InputGroup>
-      {errors[title] && (
+      {errors[name] && (
         <Text>{`${
-          (errors[title] as DeepMap<FieldValues, FieldError>).message
+          (errors[name] as DeepMap<FieldValues, FieldError>).message
         }`}</Text>
       )}
     </>

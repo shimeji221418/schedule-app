@@ -12,3 +12,5 @@ export type GetUserType = {
 };
 
 export type LoginUserType = GetUserType | null;
+
+export type EditUserType = GetUserType & { password: string };

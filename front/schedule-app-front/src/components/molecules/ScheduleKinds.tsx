@@ -46,7 +46,9 @@ const ScheduleKinds: FC<Props> = (props) => {
             )
           )}
           {loginUser.role === "admin" && (
-            <Button onClick={() => router.push("/schedule_kind/new")}>+</Button>
+            <Button onClick={() => router.push("/admin/schedule_kind/new")}>
+              +
+            </Button>
           )}
         </Flex>
       )}

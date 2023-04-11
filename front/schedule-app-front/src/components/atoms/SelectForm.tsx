@@ -20,6 +20,7 @@ type Props = {
   handleonChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   message: string;
   value?: number;
+  isDisabled?: boolean;
   isReadOnly?: boolean;
 };
 
@@ -35,6 +36,7 @@ const SelectForm: FC<Props> = memo((props) => {
     value,
     teamUsers,
     isReadOnly,
+    isDisabled,
   } = props;
   const {
     register,
@@ -57,7 +59,7 @@ const SelectForm: FC<Props> = memo((props) => {
           })}
           name={name}
           onChange={(e) => handleonChange(e)}
-          disabled={isReadOnly}
+          disabled={isDisabled}
           // placeholder={title}
         >
           {teams && (

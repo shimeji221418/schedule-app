@@ -1,5 +1,4 @@
 import { GetUserType } from "@/types/api/user";
-import { useDisclosure } from "@chakra-ui/react";
 import { format } from "date-fns";
 import React, { useCallback, useState } from "react";
 
