@@ -91,6 +91,9 @@ const SelectForm: FC<Props> = memo((props) => {
           )}
           {teamUsers && (
             <>
+              <option selected hidden value="0">
+                選択してください
+              </option>
               {teamUsers.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.name}

@@ -20,18 +20,29 @@ import { GetUserType } from "@/types/api/user";
 import { GetTaskType } from "@/types/api/schedule_kind";
 
 type Props = {
+  userIds: Array<number>;
   targetTeam: TeamType;
   dailySchedules: Array<scheduleType>;
+  weeklySchedules: Array<scheduleType>;
   today: Date;
   date: Date;
   setDate: Dispatch<SetStateAction<Date>>;
-  teamUser: Array<GetUserType>;
+  selectUsers: Array<GetUserType>;
   tasks: Array<GetTaskType>;
 };
 
 const DailySchedule: FC<Props> = memo((props) => {
-  const { targetTeam, dailySchedules, today, date, setDate, teamUser, tasks } =
-    props;
+  const {
+    userIds,
+    targetTeam,
+    dailySchedules,
+    weeklySchedules,
+    today,
+    date,
+    setDate,
+    selectUsers,
+    tasks,
+  } = props;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { targetDate, targetUser, openSchedule, openSchedule2 } =
     useOpenSchedule({ onOpen });
@@ -76,15 +87,18 @@ const DailySchedule: FC<Props> = memo((props) => {
         marginLeft="20px"
         marginTop="20px"
       >
-        <Box marginTop="50px" padding={0} marginRight="20px">
-          {times.map((hour, i) => (
-            <Box key={i} marginBottom="56px">
-              {hour}
-            </Box>
-          ))}
-        </Box>
+        {userIds.length !== 0 && (
+          <Box marginTop="50px" padding={0} marginRight="20px">
+            {times.map((hour, i) => (
+              <Box key={i} marginBottom="56px">
+                {hour}
+              </Box>
+            ))}
+          </Box>
+        )}
+
         <Flex>
-          {teamUser.map((user) => (
+          {selectUsers.map((user) => (
             <Box key={user.id} marginRight="50px" position="relative">
               <Box onClick={() => openSchedule(date, user)} cursor="pointer">
                 {user.name}
@@ -147,14 +161,16 @@ const DailySchedule: FC<Props> = memo((props) => {
         date={targetDate}
         tasks={tasks}
         targetUser={targetUser}
-        teamUser={teamUser}
+        teamUser={selectUsers}
+        weeklySchedules={weeklySchedules}
       />
       <EditScheduleModal
         isOpen={isModalOpen}
         onClose={closeEditSchedule}
         schedule={targetSchedule}
         tasks={tasks}
-        teamUser={teamUser}
+        teamUser={selectUsers}
+        weeklySchedules={weeklySchedules}
       />
     </>
   );

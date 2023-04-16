@@ -6,9 +6,14 @@ import { useAuthContext } from "@/provider/AuthProvider";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import {
+  Box,
+  Button,
   Checkbox,
-  CheckboxGroup,
   InputGroup,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuOptionGroup,
   Radio,
   RadioGroup,
   Stack,
@@ -28,6 +33,7 @@ import { useGetTasks } from "@/hooks/useGetTasks";
 import DailySchedule from "@/components/templates/DailySchedule";
 import WeeklySchedule from "@/components/templates/WeeklySchedule";
 import { useGetAllUsers } from "@/hooks/useAllUsers";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 export type TargetUserType = {
   id: number;
@@ -48,8 +54,14 @@ export default function Home() {
   });
   const [mode, setMode] = useState<"team" | "custom">("team");
   const { teamUser } = useGetTeamUsers(targetTeam.id);
-  const { teamSchedules, dailySchedules, date, setDate, userIds, onClickUser } =
-    useGetSchedules(targetTeam.id);
+  const {
+    weeklySchedules,
+    dailySchedules,
+    date,
+    setDate,
+    userIds,
+    onClickUser,
+  } = useGetSchedules(targetTeam.id, mode);
   const { tasks, getTask } = useGetTasks({ auth, loginUser });
   const { allUsers, getAllUsers2 } = useGetAllUsers({ auth });
   const handleSelectChange = useCallback(
@@ -72,6 +84,11 @@ export default function Home() {
     setIsDailyCalendar(false);
   };
 
+  const selectUsers =
+    mode === "team"
+      ? allUsers.filter((user) => user.teamId == targetTeam.id)
+      : allUsers.filter((user) => userIds.includes(user.id));
+
   useEffect(() => {
     if (loginUser) {
       getTask();
@@ -85,31 +102,58 @@ export default function Home() {
     <>
       {!loading && loginUser && (
         <>
-          <PrimaryButton size="xs" color="cyan" onClick={ChangeWeekly}>
-            Weekly
-          </PrimaryButton>
-          <PrimaryButton size="xs" color="cyan" onClick={ChangeDaily}>
-            Daily
-          </PrimaryButton>
-
           <RadioGroup
             onChange={(value: "team" | "custom") => setMode(value)}
             value={mode}
+            colorScheme="cyan"
           >
-            <Radio value="team">チーム</Radio>
-            <Radio value="custom">ユーザー選択</Radio>
+            <Stack spacing={5} direction="row">
+              <Radio value="team">チーム選択</Radio>
+              <Radio value="custom">ユーザー選択</Radio>
+            </Stack>
           </RadioGroup>
 
-          <InputGroup>
-            <SelectForm
-              teams={teams}
-              title="team"
-              name="id"
-              value={targetTeam.id}
-              message="チームが選択されていません"
-              handleonChange={handleSelectChange}
-            />
-          </InputGroup>
+          <Box h="40px">
+            {mode == "team" ? (
+              <SelectForm
+                teams={teams}
+                title="team"
+                name="id"
+                value={targetTeam.id}
+                message="チームが選択されていません"
+                handleonChange={handleSelectChange}
+              />
+            ) : (
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  _hover={{ opacity: "none" }}
+                  rightIcon={<ChevronDownIcon />}
+                  bg="cyan.600"
+                  color="white"
+                >
+                  Users
+                </MenuButton>
+                <MenuList display="flex" alignItems="center">
+                  <MenuOptionGroup>
+                    <Stack spacing={3} p={2}>
+                      {allUsers.map((user) => (
+                        <Checkbox
+                          colorScheme="cyan"
+                          key={user.id}
+                          onChange={() => onClickUser(user.id)}
+                          isChecked={userIds.includes(user.id)}
+                        >
+                          {user.name}
+                        </Checkbox>
+                      ))}
+                    </Stack>
+                  </MenuOptionGroup>
+                </MenuList>
+              </Menu>
+            )}
+          </Box>
+
           <InputGroup>
             <InputForm
               type="date"
@@ -122,47 +166,41 @@ export default function Home() {
               message="日付を入力してください"
             />
           </InputGroup>
-          <CheckboxGroup colorScheme="green">
-            <Stack spacing={[1, 5]} direction={["column", "row"]}>
-              {allUsers.map((user) => (
-                <Checkbox
-                  key={user.id}
-                  onChange={() => onClickUser(user.id)}
-                  isChecked={userIds.includes(user.id)}
-                >
-                  {user.name}
-                </Checkbox>
-              ))}
-            </Stack>
-          </CheckboxGroup>
+
           <ScheduleKinds tasks={tasks} />
+          <PrimaryButton size="xs" color="cyan" onClick={ChangeWeekly}>
+            Weekly
+          </PrimaryButton>
+          <PrimaryButton size="xs" color="cyan" onClick={ChangeDaily}>
+            Daily
+          </PrimaryButton>
 
           <>
-            {console.log({ mode })}
+            {/* {console.log({ mode })}
             {console.log({ allUsers })}
-            {console.log({ targetTeam })}
+            {console.log({ targetTeam })} */}
             {!isDailyCalendar && (
               <WeeklySchedule
-                mode={mode}
                 targetTeam={targetTeam}
-                teamSchedules={teamSchedules}
+                weeklySchedules={weeklySchedules}
                 today={today}
                 date={date}
                 setDate={setDate}
-                userIds={userIds}
-                allUser={allUsers}
+                selectUsers={selectUsers}
                 tasks={tasks}
               />
             )}
           </>
           {isDailyCalendar && dailySchedules && (
             <DailySchedule
+              userIds={userIds}
               targetTeam={targetTeam}
               dailySchedules={dailySchedules}
+              weeklySchedules={weeklySchedules}
               today={today}
               date={date}
               setDate={setDate}
-              teamUser={teamUser}
+              selectUsers={selectUsers}
               tasks={tasks}
             />
           )}

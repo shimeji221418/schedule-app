@@ -42,6 +42,8 @@ import DeleteModal from "./deleteModal";
 import PrimaryButton from "../../atoms/PrimaryButton";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { useGetSchedules } from "@/hooks/useGetSchedules";
+import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
+import ErrorMessageModal from "./ErrorMessageModal";
 
 type Props = {
   isOpen: boolean;
@@ -49,10 +51,11 @@ type Props = {
   schedule: scheduleType | null;
   tasks: Array<GetTaskType>;
   teamUser: Array<GetUserType>;
+  weeklySchedules?: Array<scheduleType>;
 };
 
 const EditScheduleModal: FC<Props> = memo((props) => {
-  const { isOpen, onClose, schedule, tasks, teamUser } = props;
+  const { isOpen, onClose, schedule, tasks, teamUser, weeklySchedules } = props;
   const { setLoading, loading, loginUser } = useAuthContext();
   const auth = getAuth(app);
   const [isDeleteModal, setIsDeleteModal] = useState(false);
@@ -66,6 +69,8 @@ const EditScheduleModal: FC<Props> = memo((props) => {
     user_id: 0,
     schedule_kind_id: 0,
   });
+  const { isErrorMessage, message, errorModalOpen, errorModalClose } =
+    useErrorMessage();
 
   const [startDay, setStartDay] = useState<string>("");
   const [endDay, setEndDay] = useState<string>("");
@@ -157,6 +162,17 @@ const EditScheduleModal: FC<Props> = memo((props) => {
   //   setEndDay(e.target.value);
   // };
 
+  const overlapSchedules: scheduleType[] | undefined = weeklySchedules?.filter(
+    (schedule) =>
+      schedule.userId == editSchedule.user_id &&
+      schedule.id != editSchedule.id &&
+      new Date(schedule.startAt) < new Date(editSchedule.end_at) &&
+      new Date(schedule.endAt) > new Date(editSchedule.start_at)
+  );
+
+  const timeCheck =
+    new Date(editSchedule.start_at) >= new Date(editSchedule.end_at);
+
   const handleonChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const target = e.target;
     const name = target.name;
@@ -186,34 +202,41 @@ const EditScheduleModal: FC<Props> = memo((props) => {
     const updateSchedule = async () => {
       try {
         if (schedule) {
-          const token = await auth.currentUser?.getIdToken(true);
-          const data = {
-            schedule: {
-              start_at: editSchedule.start_at,
-              end_at: editSchedule.end_at,
-              is_Locked: editSchedule.is_Locked,
-              description: editSchedule.description,
-              user_id: editSchedule.user_id,
-              schedule_kind_id: editSchedule.schedule_kind_id,
-            },
-          };
-          const props: BaseClientWithAuthType = {
-            method: "patch",
-            url: `/schedules/${schedule.id}`,
-            token: token!,
-            params: data,
-          };
-          const res = await BaseClientWithAuth(props);
-          console.log(res.data);
-          // const startDate = new Date(schedule!.startAt.toString());
-          // const targetDay = format(startDate, "yyyy-MM-dd");
-          // getSchedules({ team_id: teamId, date: targetDay });
+          if (timeCheck) {
+            errorModalOpen("終了時刻が開始時刻より早く設定されています");
+          } else if (overlapSchedules?.length !== 0) {
+            const errorMessage = overlapSchedules?.map(
+              (schedule) => schedule.description
+            );
+            errorModalOpen(
+              `同時間帯に "${errorMessage}" が既に登録されています`
+            );
+          } else {
+            const token = await auth.currentUser?.getIdToken(true);
+            const data = {
+              schedule: {
+                start_at: editSchedule.start_at,
+                end_at: editSchedule.end_at,
+                is_Locked: editSchedule.is_Locked,
+                description: editSchedule.description,
+                user_id: editSchedule.user_id,
+                schedule_kind_id: editSchedule.schedule_kind_id,
+              },
+            };
+            const props: BaseClientWithAuthType = {
+              method: "patch",
+              url: `/schedules/${schedule.id}`,
+              token: token!,
+              params: data,
+            };
+            const res = await BaseClientWithAuth(props);
+            console.log(res.data);
+            onClose();
+            location.reload();
+          }
         }
       } catch (e: any) {
         console.log(e);
-      } finally {
-        onClose();
-        location.reload();
       }
     };
     updateSchedule();
@@ -427,6 +450,11 @@ const EditScheduleModal: FC<Props> = memo((props) => {
             isOpen={isDeleteModal}
             onClose={CloseDeleteModal}
             handleDelete={handleDelete}
+          />
+          <ErrorMessageModal
+            isOpen={isErrorMessage}
+            onClose={errorModalClose}
+            message={message}
           />
         </>
       )}

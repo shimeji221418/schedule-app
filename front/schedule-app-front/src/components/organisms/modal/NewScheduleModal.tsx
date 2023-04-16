@@ -1,4 +1,4 @@
-import { NewScheduleType } from "@/types/api/schedule";
+import { NewScheduleType, scheduleType } from "@/types/api/schedule";
 import { GetTaskType } from "@/types/api/schedule_kind";
 import { TeamType } from "@/types/api/team";
 import {
@@ -15,6 +15,7 @@ import {
   ModalOverlay,
   Select,
   Stack,
+  Text,
   Textarea,
 } from "@chakra-ui/react";
 import { app } from "../../../../firebase";
@@ -29,7 +30,9 @@ import { hours, minutes } from "../../atoms";
 import { EndTimeType, StartTimeType } from "@/types";
 import { TargetUserType } from "@/app/page";
 import { GetUserType } from "@/types/api/user";
-import { format } from "util";
+import { format } from "date-fns";
+import ErrorMessageModal from "./ErrorMessageModal";
+import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
 
 type Props = {
   isOpen: boolean;
@@ -38,13 +41,24 @@ type Props = {
   targetUser?: GetUserType;
   teamUser?: Array<GetUserType>;
   tasks: Array<GetTaskType>;
+  weeklySchedules?: Array<scheduleType>;
 };
 
 const NewScheduleModal: FC<Props> = memo((props) => {
-  const { isOpen, onClose, date, tasks, targetUser, teamUser } = props;
+  const {
+    isOpen,
+    onClose,
+    date,
+    tasks,
+    targetUser,
+    teamUser,
+    weeklySchedules,
+  } = props;
   const auth = getAuth(app);
   const { loginUser } = useAuthContext();
   const { handleSubmit } = useFormContext();
+  const { isErrorMessage, message, errorModalOpen, errorModalClose } =
+    useErrorMessage();
   const [selectDay, setSelectDay] = useState<string>("");
   const [startTime, setStartTime] = useState<StartTimeType>({
     startHour: "",
@@ -113,32 +127,51 @@ const NewScheduleModal: FC<Props> = memo((props) => {
     setNewSchedule({ ...newSchedule, [name]: value });
   };
 
-  const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {};
+  const overlapSchedules: scheduleType[] | undefined = weeklySchedules?.filter(
+    (schedule) =>
+      schedule.userId == newSchedule.user_id &&
+      new Date(schedule.startAt) < new Date(newSchedule.end_at) &&
+      new Date(schedule.endAt) > new Date(newSchedule.start_at)
+  );
+
+  const timeCheck =
+    new Date(newSchedule.start_at) >= new Date(newSchedule.end_at);
 
   const handleonSubmit = () => {
     const createSchedule = async () => {
       try {
         if (loginUser && targetUser) {
-          const token = await auth.currentUser?.getIdToken(true);
-          const data = {
-            schedule: {
-              start_at: newSchedule.start_at,
-              end_at: newSchedule.end_at,
-              is_Locked: newSchedule.is_Locked,
-              description: newSchedule.description,
-              schedule_kind_id: newSchedule.schedule_kind_id,
-              user_id: newSchedule.user_id,
-            },
-          };
-          const props: BaseClientWithAuthType = {
-            method: "post",
-            url: "/schedules/",
-            token: token!,
-            params: data,
-          };
-          const res = await BaseClientWithAuth(props);
-          console.log(res.data);
-          onClose();
+          if (timeCheck) {
+            errorModalOpen("終了時刻が開始時刻より早く設定されています");
+          } else if (overlapSchedules?.length !== 0) {
+            const errorMessage = overlapSchedules?.map(
+              (schedule) => schedule.description
+            );
+            errorModalOpen(
+              `同時間帯に "${errorMessage}" が既に登録されています`
+            );
+          } else {
+            const token = await auth.currentUser?.getIdToken(true);
+            const data = {
+              schedule: {
+                start_at: newSchedule.start_at,
+                end_at: newSchedule.end_at,
+                is_Locked: newSchedule.is_Locked,
+                description: newSchedule.description,
+                schedule_kind_id: newSchedule.schedule_kind_id,
+                user_id: newSchedule.user_id,
+              },
+            };
+            const props: BaseClientWithAuthType = {
+              method: "post",
+              url: "/schedules/",
+              token: token!,
+              params: data,
+            };
+            const res = await BaseClientWithAuth(props);
+            console.log(res.data);
+            onClose();
+          }
         }
       } catch (e: any) {
         console.log(e);
@@ -297,6 +330,11 @@ const NewScheduleModal: FC<Props> = memo((props) => {
           </form>
         </ModalContent>
       </Modal>
+      <ErrorMessageModal
+        isOpen={isErrorMessage}
+        onClose={errorModalClose}
+        message={message}
+      />
     </>
   );
 });

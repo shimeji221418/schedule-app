@@ -10,8 +10,8 @@ Rails.application.routes.draw do
       get "users/team_users" => "users#team_users"
       get "schedules/weekly_team_schedules" =>"schedules#weekly_team_schedules"
       get "schedules/daily_team_schedules" => "schedules#daily_team_schedules"
-      get "schedules/weekly_custum_schedules" =>"schedules#weekly_custum_schedules"
-      get "schedules/daily_custum_schedules" => "schedules#daily_custum_schedules"
+      get "schedules/weekly_custom_schedules" =>"schedules#weekly_custom_schedules"
+      get "schedules/daily_custom_schedules" => "schedules#daily_custom_schedules"
       get "schedules/my_schedules" => "schedules#my_schedules"
       resources :teams
       resources :users, only:[:index, :show, :update, :destroy]

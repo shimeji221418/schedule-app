@@ -11,11 +11,13 @@ type Props = {
   date: string;
 };
 
-export const useGetSchedules = (id: number) => {
+export const useGetSchedules = (id: number, mode?: "team" | "custom") => {
   const auth = getAuth(app);
   const [date, setDate] = useState<Date>(new Date());
   const { loginUser } = useAuthContext();
-  const [teamSchedules, setTeamSchedules] = useState<Array<scheduleType>>([]);
+  const [weeklySchedules, setWeeklySchedules] = useState<Array<scheduleType>>(
+    []
+  );
   const [dailySchedules, setDailySchedules] = useState<Array<scheduleType>>([]);
   const [userIds, setUserIds] = useState<Array<number>>([]);
 
@@ -48,13 +50,13 @@ export const useGetSchedules = (id: number) => {
             Number(format(new Date(a.startAt), "k")) -
             Number(format(new Date(b.startAt), "k"))
         );
-        setTeamSchedules(sortData);
+        setWeeklySchedules(sortData);
         console.log(res.data);
       } catch (e: any) {
         console.log(e);
       }
     },
-    [teamSchedules]
+    [weeklySchedules]
   );
 
   const getDailySchedules = useCallback(
@@ -84,50 +86,73 @@ export const useGetSchedules = (id: number) => {
     [dailySchedules]
   );
 
-  const getCustumSchedules = useCallback(async () => {
+  const getCustomSchedules = useCallback(
+    async (startDate: string) => {
+      try {
+        const token = await auth.currentUser?.getIdToken(true);
+        const data = { user_ids: userIds.join(","), date: startDate };
+        const props: BaseClientWithAuthType = {
+          method: "get",
+          url: "/schedules/weekly_custom_schedules",
+          token: token!,
+          params: data,
+        };
+        const res = await BaseClientWithAuth(props);
+        const api: Array<scheduleType> = res.data;
+        const sortData = api.sort(
+          (a, b) =>
+            Number(format(new Date(a.startAt), "k")) -
+            Number(format(new Date(b.startAt), "k"))
+        );
+        setWeeklySchedules(sortData);
+        console.log(res.data);
+      } catch (e: any) {
+        console.log(e);
+      }
+    },
+    [userIds]
+  );
+
+  const getCustomDailySchedules = useCallback(async () => {
     try {
       const token = await auth.currentUser?.getIdToken(true);
       const data = { user_ids: userIds.join(","), date: date };
       const props: BaseClientWithAuthType = {
         method: "get",
-        url: "/schedules/weekly_custum_schedules",
+        url: "/schedules/daily_custom_schedules",
         token: token!,
         params: data,
       };
       const res = await BaseClientWithAuth(props);
-      const api: Array<scheduleType> = res.data;
-      const sortData = api.sort(
-        (a, b) =>
-          Number(format(new Date(a.startAt), "k")) -
-          Number(format(new Date(b.startAt), "k"))
-      );
-      setTeamSchedules(sortData);
+      setDailySchedules(res.data);
       console.log(res.data);
     } catch (e: any) {
       console.log(e);
     }
-  }, [userIds]);
+  }, [userIds, date]);
 
   useEffect(() => {
-    if (loginUser && date && id) {
+    if (loginUser && date && id && mode == "team") {
       const day = format(date, "yyyy-MM-dd");
       const startDate = format(startOfWeek(date), "yyyy-MM-dd");
 
       getSchedules({ team_id: id, date: startDate });
       getDailySchedules({ team_id: id, date: day });
     }
-  }, [loginUser, date, id]);
+  }, [loginUser, date, id, mode]);
 
   useEffect(() => {
-    if (userIds.length >= 2) {
-      getCustumSchedules();
+    if (userIds.length >= 1 && mode == "custom") {
+      const startDate = format(startOfWeek(date), "yyyy-MM-dd");
+      getCustomSchedules(startDate);
+      getCustomDailySchedules();
     }
-  }, [userIds]);
+  }, [userIds, date, mode]);
 
   return {
     getSchedules,
-    teamSchedules,
-    setTeamSchedules,
+    weeklySchedules,
+    setWeeklySchedules,
     dailySchedules,
     setDailySchedules,
     date,

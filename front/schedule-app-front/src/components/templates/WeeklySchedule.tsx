@@ -20,28 +20,24 @@ import EditScheduleModal from "../organisms/modal/EditScheduleModal";
 import NewScheduleModal from "../organisms/modal/NewScheduleModal";
 
 type Props = {
-  mode: "team" | "custom";
   targetTeam: TeamType;
-  teamSchedules: Array<scheduleType>;
+  weeklySchedules: Array<scheduleType>;
   today: Date;
   date: Date;
   setDate: Dispatch<SetStateAction<Date>>;
-  allUser: Array<GetUserType>;
-  userIds: Array<number>;
+  selectUsers: Array<GetUserType>;
   tasks: Array<GetTaskType>;
 };
 
 const WeeklySchedule: FC<Props> = (props) => {
   const {
-    mode,
     targetTeam,
-    teamSchedules,
+    weeklySchedules,
     today,
     date,
     setDate,
-    allUser,
+    selectUsers,
     tasks,
-    userIds,
   } = props;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const nextWeek = useCallback(() => {
@@ -61,10 +57,6 @@ const WeeklySchedule: FC<Props> = (props) => {
     end: endOfWeek(date),
   });
 
-  const teamUser = () =>
-    mode === "team"
-      ? allUser.filter((user) => user.teamId === targetTeam.id)
-      : allUser.filter((user) => userIds.includes(user.id));
   const { targetDate, targetUser, openSchedule } = useOpenSchedule({ onOpen });
   const { targetSchedule, isModalOpen, openEditSchedule, closeEditSchedule } =
     useOpenEditSchedule();
@@ -79,9 +71,7 @@ const WeeklySchedule: FC<Props> = (props) => {
       <PrimaryButton size="xs" color="green" onClick={thisWeek}>
         ThisWeek
       </PrimaryButton>
-      {console.log(mode)}
-
-      {teamUser().map((user) => (
+      {selectUsers.map((user) => (
         <Flex key={user.id} width="100%" mb={3}>
           <Box display="grid" placeItems="center" width="100px">
             {user.name}
@@ -106,7 +96,7 @@ const WeeklySchedule: FC<Props> = (props) => {
                   {format(day, "M/d")}
                 </Box>
 
-                {teamSchedules.map(
+                {weeklySchedules.map(
                   (schedule) =>
                     format(day, "yyyy-MM-dd") ===
                       format(new Date(schedule.startAt), "yyyy-MM-dd") &&
@@ -133,7 +123,6 @@ const WeeklySchedule: FC<Props> = (props) => {
           </Flex>
         </Flex>
       ))}
-
       {/* {teamUser.map((user) => (
         <Flex key={user.id}>
           <Box key={user.id} border="1px" marginBottom={1}>
@@ -148,7 +137,7 @@ const WeeklySchedule: FC<Props> = (props) => {
                   >
                     {format(day, "M/d")}
                   </Box>
-                  {teamSchedules.map(
+                  {weeklySchedules.map(
                     (schedule) =>
                       format(day, "yyyy-MM-dd") ===
                         format(new Date(schedule.startAt), "yyyy-MM-dd") &&
@@ -178,14 +167,16 @@ const WeeklySchedule: FC<Props> = (props) => {
         date={targetDate}
         tasks={tasks}
         targetUser={targetUser}
-        teamUser={teamUser()}
+        teamUser={selectUsers}
+        weeklySchedules={weeklySchedules}
       />
       <EditScheduleModal
         isOpen={isModalOpen}
         onClose={closeEditSchedule}
         schedule={targetSchedule}
         tasks={tasks}
-        teamUser={teamUser()}
+        teamUser={selectUsers}
+        weeklySchedules={weeklySchedules}
       />
     </>
   );

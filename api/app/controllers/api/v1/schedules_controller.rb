@@ -46,7 +46,7 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
         end
     end
 
-    def weekly_custum_schedules
+    def weekly_custom_schedules
         start_date, end_date = get_start_and_end_date
         ids = params[:user_ids].split(',') # "?user_ids=1,2,4"
         pp "====="
@@ -72,7 +72,7 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
         end
     end
 
-    def daily_custum_schedules
+    def daily_custom_schedules
         start_date, end_date = get_start_and_end_date(false)
         ids = params[:user_ids].split(',')
         schedules = Schedule.where(user_id: ids, start_at: start_date...end_date)
