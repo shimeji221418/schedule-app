@@ -17,10 +17,19 @@ import {
   Stack,
   Text,
   Textarea,
+  Tooltip,
 } from "@chakra-ui/react";
 import { app } from "../../../../firebase";
 import { getAuth } from "firebase/auth";
-import React, { ChangeEvent, FC, memo, useEffect, useState } from "react";
+import React, {
+  ChangeEvent,
+  Dispatch,
+  FC,
+  memo,
+  SetStateAction,
+  useEffect,
+  useState,
+} from "react";
 import SelectForm from "../../atoms/SelectForm";
 import { ChangeHandler, useFormContext } from "react-hook-form";
 import FormButton from "../../atoms/FormButton";
@@ -33,6 +42,8 @@ import { GetUserType } from "@/types/api/user";
 import { format } from "date-fns";
 import ErrorMessageModal from "./ErrorMessageModal";
 import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
+import DailySchedule from "@/components/templates/DailySchedule";
+import { useMessage } from "@/hooks/useMessage";
 
 type Props = {
   isOpen: boolean;
@@ -41,7 +52,12 @@ type Props = {
   targetUser?: GetUserType;
   teamUser?: Array<GetUserType>;
   tasks: Array<GetTaskType>;
-  weeklySchedules?: Array<scheduleType>;
+  weeklySchedules: Array<scheduleType>;
+  mySchedules?: Array<scheduleType>;
+  setMySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
+  dailySchedules?: Array<scheduleType>;
+  setWeeklySchedules: Dispatch<SetStateAction<scheduleType[]>>;
+  setDailySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
 };
 
 const NewScheduleModal: FC<Props> = memo((props) => {
@@ -53,10 +69,16 @@ const NewScheduleModal: FC<Props> = memo((props) => {
     targetUser,
     teamUser,
     weeklySchedules,
+    mySchedules,
+    setMySchedules,
+    dailySchedules,
+    setWeeklySchedules,
+    setDailySchedules,
   } = props;
   const auth = getAuth(app);
   const { loginUser } = useAuthContext();
   const { handleSubmit } = useFormContext();
+  const { showMessage } = useMessage();
   const { isErrorMessage, message, errorModalOpen, errorModalClose } =
     useErrorMessage();
   const [selectDay, setSelectDay] = useState<string>("");
@@ -113,26 +135,21 @@ const NewScheduleModal: FC<Props> = memo((props) => {
     });
   }, [endTime, selectDay]);
 
-  const handleonChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleonChange = (
+    e: ChangeEvent<HTMLTextAreaElement> | ChangeEvent<HTMLSelectElement>
+  ) => {
     const target = e.target;
     const name = target.name;
     const value = target.value;
     setNewSchedule({ ...newSchedule, [name]: value });
   };
 
-  const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const target = e.target;
-    const name = target.name;
-    const value = target.value;
-    setNewSchedule({ ...newSchedule, [name]: value });
-  };
-
-  const overlapSchedules: scheduleType[] | undefined = weeklySchedules?.filter(
-    (schedule) =>
-      schedule.userId == newSchedule.user_id &&
-      new Date(schedule.startAt) < new Date(newSchedule.end_at) &&
-      new Date(schedule.endAt) > new Date(newSchedule.start_at)
-  );
+  // const overlapSchedules: scheduleType[] | undefined = weeklySchedules?.filter(
+  //   (schedule) =>
+  //     schedule.userId == newSchedule.user_id &&
+  //     new Date(schedule.startAt) < new Date(newSchedule.end_at) &&
+  //     new Date(schedule.endAt) > new Date(newSchedule.start_at)
+  // );
 
   const timeCheck =
     new Date(newSchedule.start_at) >= new Date(newSchedule.end_at);
@@ -143,13 +160,13 @@ const NewScheduleModal: FC<Props> = memo((props) => {
         if (loginUser && targetUser) {
           if (timeCheck) {
             errorModalOpen("終了時刻が開始時刻より早く設定されています");
-          } else if (overlapSchedules?.length !== 0) {
-            const errorMessage = overlapSchedules?.map(
-              (schedule) => schedule.description
-            );
-            errorModalOpen(
-              `同時間帯に "${errorMessage}" が既に登録されています`
-            );
+            // } else if (overlapSchedules?.length !== 0) {
+            //   const errorMessage = overlapSchedules?.map(
+            //     (schedule) => schedule.description
+            //   );
+            //   errorModalOpen(
+            //     `同時間帯に "${errorMessage}" が既に登録されています`
+            //   );
           } else {
             const token = await auth.currentUser?.getIdToken(true);
             const data = {
@@ -169,12 +186,22 @@ const NewScheduleModal: FC<Props> = memo((props) => {
               params: data,
             };
             const res = await BaseClientWithAuth(props);
-            console.log(res.data);
+            setWeeklySchedules([...weeklySchedules, res.data]);
+
+            if (dailySchedules && setDailySchedules) {
+              setDailySchedules([...dailySchedules, res.data]);
+            }
+
+            if (mySchedules && setMySchedules) {
+              setMySchedules([...mySchedules, res.data]);
+            }
             onClose();
+            showMessage({ title: "新規予定を作成しました", status: "success" });
           }
         }
       } catch (e: any) {
         console.log(e);
+        errorModalOpen(e.response.data.data.base[0]);
       }
     };
     createSchedule();
@@ -185,7 +212,9 @@ const NewScheduleModal: FC<Props> = memo((props) => {
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>New Schedule</ModalHeader>
+          <ModalHeader m={"auto"} fontSize="2xl">
+            New Schedule
+          </ModalHeader>
           <ModalCloseButton />
           <form onSubmit={handleSubmit(handleonSubmit)}>
             <ModalBody>
@@ -194,7 +223,7 @@ const NewScheduleModal: FC<Props> = memo((props) => {
                   <SelectForm
                     title="User"
                     name="user_id"
-                    handleonChange={handleSelectChange}
+                    handleonChange={handleonChange}
                     teamUsers={teamUser}
                     value={newSchedule.user_id}
                     message="Userが入力されていません"
@@ -211,20 +240,30 @@ const NewScheduleModal: FC<Props> = memo((props) => {
                 )}
 
                 <InputGroup>
-                  <InputLeftAddon children="日時" bg="cyan.600" color="white" />
+                  <InputLeftAddon
+                    w="100px"
+                    justifyContent={"center"}
+                    children="日時"
+                    bg="cyan.400"
+                    color="white"
+                    fontWeight="bold"
+                  />
                   <Input
                     name="date"
-                    type="date"
+                    type="text"
                     placeholder="日付"
                     value={selectDay}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setSelectDay(e.target.value)
-                    }
+                    isReadOnly={true}
                     required
                   />
                 </InputGroup>
                 <InputGroup>
-                  <InputLeftAddon children="開始" bg="cyan.600" color="white" />
+                  <InputLeftAddon
+                    children="開始"
+                    bg="cyan.600"
+                    color="white"
+                    fontWeight="bold"
+                  />
                   <Select
                     name="startHour"
                     placeholder="時間"
@@ -259,7 +298,12 @@ const NewScheduleModal: FC<Props> = memo((props) => {
                   </Select>
                 </InputGroup>
                 <InputGroup>
-                  <InputLeftAddon children="終了" bg="cyan.600" color="white" />
+                  <InputLeftAddon
+                    children="終了"
+                    bg="cyan.600"
+                    color="white"
+                    fontWeight="bold"
+                  />
                   <Select
                     name="endHour"
                     placeholder="時間"
@@ -294,14 +338,21 @@ const NewScheduleModal: FC<Props> = memo((props) => {
                   </Select>
                 </InputGroup>
                 <SelectForm
-                  title="カテゴリー"
+                  title="カテゴリ"
                   name="schedule_kind_id"
-                  handleonChange={handleSelectChange}
+                  handleonChange={handleonChange}
                   tasks={tasks}
                   message="カテゴリーが入力されていません"
                 />
                 <InputGroup>
-                  <InputLeftAddon children="詳細" bg="cyan.600" color="white" />
+                  <InputLeftAddon
+                    children="詳細"
+                    bg="cyan.400"
+                    color="white"
+                    fontWeight="bold"
+                    w="100px"
+                    justifyContent={"center"}
+                  />
                   <Textarea
                     name="description"
                     placeholder="詳細"
@@ -309,6 +360,7 @@ const NewScheduleModal: FC<Props> = memo((props) => {
                     onChange={handleonChange}
                   />
                 </InputGroup>
+
                 <Checkbox
                   name="is_Locked"
                   onChange={() =>
@@ -323,7 +375,7 @@ const NewScheduleModal: FC<Props> = memo((props) => {
               </Stack>
             </ModalBody>
             <ModalFooter>
-              <FormButton type="submit" color="cyan" size="md">
+              <FormButton type="submit" color="cyan" size="lg">
                 create
               </FormButton>
             </ModalFooter>

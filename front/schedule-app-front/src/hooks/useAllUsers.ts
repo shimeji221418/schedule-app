@@ -1,5 +1,5 @@
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
-import { GetUserType, LoginUserType } from "@/types/api/user";
+import { GetUserType } from "@/types/api/user";
 import { Auth } from "firebase/auth";
 import { useCallback, useState } from "react";
 
@@ -12,7 +12,7 @@ export const useGetAllUsers = (props: Props) => {
 
   const [allUsers, setAllUsers] = useState<Array<GetUserType>>([]);
 
-  const getAllUsers2 = useCallback(async () => {
+  const getAllUsers = useCallback(async () => {
     try {
       const token = await auth.currentUser?.getIdToken(true);
       const props: BaseClientWithAuthType = {
@@ -28,5 +28,5 @@ export const useGetAllUsers = (props: Props) => {
     }
   }, [allUsers, setAllUsers]);
 
-  return { allUsers, getAllUsers2 };
+  return { allUsers, getAllUsers };
 };

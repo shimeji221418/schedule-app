@@ -6,7 +6,7 @@ export type NewUserType = {
   team_id: number;
 };
 
-export type LoginUserType = Pick<NewUserType, "email" | "password">;
+export type SignonUserType = Pick<NewUserType, "email" | "password">;
 
 export type StartTimeType = {
   startHour: string;

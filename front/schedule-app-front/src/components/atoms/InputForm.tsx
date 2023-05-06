@@ -12,6 +12,7 @@ type Props = {
   title: string;
   type: string;
   value?: string;
+  fontSize?: string;
   handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
   message: string;
   isDisabled?: boolean;
@@ -25,6 +26,7 @@ const InputForm: FC<Props> = memo((props) => {
     title,
     type,
     value,
+    fontSize = "md",
     handleChange,
     message,
     isReadOnly,
@@ -44,7 +46,14 @@ const InputForm: FC<Props> = memo((props) => {
   return (
     <>
       <InputGroup>
-        <InputLeftAddon children={title} bg="cyan.600" color="white" />
+        <InputLeftAddon
+          children={title}
+          bg="cyan.400"
+          fontWeight="bold"
+          color="white"
+          w="100px"
+          justifyContent="center"
+        />
         <Input
           value={value}
           {...register(`${name}`, {
@@ -58,6 +67,7 @@ const InputForm: FC<Props> = memo((props) => {
           isReadOnly={isReadOnly}
           disabled={isDisabled}
           width={width}
+          fontSize={fontSize}
         />
       </InputGroup>
       {errors[name] && (

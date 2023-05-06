@@ -12,22 +12,32 @@ import {
 } from "@chakra-ui/react";
 import { app } from "../../../../../firebase";
 import { getAuth } from "firebase/auth";
-import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
+import React, {
+  ChangeEvent,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { useFormContext } from "react-hook-form";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { TaskType } from "@/types/api/schedule_kind";
 import { useGetTasks } from "@/hooks/useGetTasks";
 import { useRouter } from "next/navigation";
+import { useMessage } from "@/hooks/useMessage";
+import PrimaryButton from "@/components/atoms/PrimaryButton";
+import { ChevronLeftIcon } from "@chakra-ui/icons";
 
 const Newtask = () => {
   const auth = getAuth(app);
   const router = useRouter();
+  const { showMessage } = useMessage();
   const [newTask, setNewTask] = useState<TaskType>({
     name: "",
     color: "",
   });
-  const { loginUser, loading } = useAuthContext();
+  const { loginUser } = useAuthContext();
   const { tasks, getTask } = useGetTasks({ auth, loginUser });
 
   const handleonChange = useCallback(
@@ -61,19 +71,21 @@ const Newtask = () => {
           };
           const res = await BaseClientWithAuth(props);
           console.log(res.data);
+          showMessage({ title: "新規作成しました", status: "success" });
+          location.reload();
         }
       } catch (e: any) {
         console.log(e);
+        showMessage({ title: `${e.message}`, status: "error" });
       }
     };
     createScheduleKind();
-    location.reload();
   };
 
   const { handleSubmit } = useFormContext();
   return (
     <>
-      {!loading && loginUser && loginUser!.role === "admin" ? (
+      {loginUser && loginUser!.role === "admin" ? (
         <>
           <Flex justify="center" mt={10}>
             <Box
@@ -83,12 +95,12 @@ const Newtask = () => {
               p={4}
               borderRadius="md"
               textAlign="center"
-              mr={4}
+              mr={10}
             >
-              <Heading as="h2">New ScheduleKind</Heading>
+              <Heading as="h1">新インデックス作成</Heading>
               <Divider my={4} borderColor="gray.400" />
               <form onSubmit={handleSubmit(handleonSubmit)}>
-                <Stack spacing={2}>
+                <Stack spacing={3}>
                   <InputForm
                     title="ジャンル名"
                     name="name"
@@ -104,52 +116,67 @@ const Newtask = () => {
                     message="カラーを入力してください"
                   />
                   <FormButton type="submit" color="cyan" size="md">
-                    Save
+                    保存
                   </FormButton>
                 </Stack>
               </form>
             </Box>
-
-            <Box
-              w="xs"
-              bg="white"
-              shadow="md"
-              p={4}
-              borderRadius="md"
-              textAlign="center"
-            >
-              <Heading as="h2">インデックス一覧</Heading>
-              <Divider my={4} borderColor="gray.400" />
-              <Stack>
-                {tasks.map((task) => (
-                  <Flex
-                    align="center"
-                    bg={task.color}
-                    justify="space-between"
-                    px={2}
-                    py={1}
-                    borderRadius="md"
-                    key={task.id}
-                    height="auto"
-                  >
-                    <Text as="h2">{task.name}</Text>
-                    <Button
-                      size="sm"
-                      padding={1}
-                      textAlign="center"
+            <Suspense>
+              <Box
+                w="xs"
+                bg="white"
+                shadow="md"
+                p={4}
+                borderRadius="md"
+                textAlign="center"
+              >
+                <Heading as="h2">インデックス一覧</Heading>
+                <Divider my={4} borderColor="gray.400" />
+                <Stack spacing={4}>
+                  {tasks.map((task) => (
+                    <Flex
+                      align="center"
                       bg={task.color}
-                      color="black"
-                      onClick={() =>
-                        router.push(`/admin/schedule_kind/edit/${task.id}`)
-                      }
+                      justify="space-between"
+                      px={2}
+                      py={1}
+                      borderRadius="md"
+                      key={task.id}
+                      height="auto"
                     >
-                      編集
-                    </Button>
-                  </Flex>
-                ))}
-              </Stack>
-            </Box>
+                      <Text as="h2" fontSize={"lg"}>
+                        {task.name}
+                      </Text>
+                      <Button
+                        size="sm"
+                        padding={1}
+                        textAlign="center"
+                        bg={task.color}
+                        color="black"
+                        onClick={() =>
+                          router.push(`/admin/schedule_kind/edit/${task.id}`)
+                        }
+                      >
+                        編集
+                      </Button>
+                    </Flex>
+                  ))}
+                </Stack>
+              </Box>
+            </Suspense>
           </Flex>
+          <Box display={"flex"} justifyContent={"center"} mt={10}>
+            <PrimaryButton
+              size="lg"
+              color="green"
+              onClick={() => {
+                router.push("/admin/");
+              }}
+            >
+              <ChevronLeftIcon />
+              戻る
+            </PrimaryButton>
+          </Box>
         </>
       ) : (
         <Text>アクセス権限がありません。ホーム画面の遷移します。</Text>

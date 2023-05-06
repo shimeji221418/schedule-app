@@ -1,6 +1,6 @@
 import { useOpenEditSchedule } from "@/hooks/schedule/useOpenEditSchedule";
 import { useOpenSchedule } from "@/hooks/schedule/useOpenSchedule";
-import { Box, Flex, useDisclosure } from "@chakra-ui/react";
+import { Box, Flex, Text, useDisclosure } from "@chakra-ui/react";
 import {
   addDays,
   differenceInMinutes,
@@ -18,8 +18,11 @@ import { TeamType } from "@/types/api/team";
 import { scheduleType } from "@/types/api/schedule";
 import { GetUserType } from "@/types/api/user";
 import { GetTaskType } from "@/types/api/schedule_kind";
+import { ArrowLeftIcon, ArrowRightIcon, LockIcon } from "@chakra-ui/icons";
+import ScheduleKinds from "../molecules/ScheduleKinds";
 
 type Props = {
+  mode: "team" | "custom";
   userIds: Array<number>;
   targetTeam: TeamType;
   dailySchedules: Array<scheduleType>;
@@ -29,10 +32,13 @@ type Props = {
   setDate: Dispatch<SetStateAction<Date>>;
   selectUsers: Array<GetUserType>;
   tasks: Array<GetTaskType>;
+  setWeeklySchedules: Dispatch<SetStateAction<scheduleType[]>>;
+  setDailySchedules: Dispatch<SetStateAction<scheduleType[]>>;
 };
 
 const DailySchedule: FC<Props> = memo((props) => {
   const {
+    mode,
     userIds,
     targetTeam,
     dailySchedules,
@@ -42,6 +48,8 @@ const DailySchedule: FC<Props> = memo((props) => {
     setDate,
     selectUsers,
     tasks,
+    setDailySchedules,
+    setWeeklySchedules,
   } = props;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { targetDate, targetUser, openSchedule, openSchedule2 } =
@@ -63,34 +71,41 @@ const DailySchedule: FC<Props> = memo((props) => {
 
   return (
     <>
-      <PrimaryButton size="xs" color="pink" onClick={nextDay}>
-        NextDay
-      </PrimaryButton>
-      <PrimaryButton size="xs" color="yellow" onClick={prevDay}>
-        prevDay
-      </PrimaryButton>
-      <PrimaryButton size="xs" color="green" onClick={toToday}>
-        today
-      </PrimaryButton>
+      <Flex justify="space-between" mx="100px">
+        <Box display="flex">
+          <PrimaryButton size="md" color="linkedin" onClick={prevDay}>
+            <ArrowLeftIcon mr={1} />
+            昨日
+          </PrimaryButton>
+          <Box mx={2} mt={1}>
+            <PrimaryButton size="sm" color="linkedin" onClick={toToday}>
+              今日
+            </PrimaryButton>
+          </Box>
 
-      <PrimaryButton
-        size="xs"
-        color="green"
-        onClick={() => openSchedule2(date)}
-      >
-        新規作成
-      </PrimaryButton>
-      {format(date, "yyyy-MM-dd")}
-      <Flex
-        width="100%"
-        justifyContent="flex-start"
-        marginLeft="20px"
-        marginTop="20px"
-      >
-        {userIds.length !== 0 && (
-          <Box marginTop="50px" padding={0} marginRight="20px">
+          <PrimaryButton size="md" color="linkedin" onClick={nextDay}>
+            翌日
+            <ArrowRightIcon ml={1} />
+          </PrimaryButton>
+        </Box>
+
+        {/* <PrimaryButton
+          size="xs"
+          color="green"
+          onClick={() => openSchedule2(date)}
+        >
+          新規作成
+        </PrimaryButton> */}
+        <Box>
+          <ScheduleKinds tasks={tasks} />
+        </Box>
+      </Flex>
+
+      <Flex justifyContent="center" marginTop="10px">
+        {(userIds.length !== 0 || mode == "team") && (
+          <Box marginTop="91px" padding={0} marginRight="30px">
             {times.map((hour, i) => (
-              <Box key={i} marginBottom="56px">
+              <Box key={i} marginBottom="52px" fontSize="lg">
                 {hour}
               </Box>
             ))}
@@ -98,21 +113,33 @@ const DailySchedule: FC<Props> = memo((props) => {
         )}
 
         <Flex>
+          {selectUsers.length == 0 && mode == "custom" && (
+            <Text fontSize={"lg"}>Userを選択してください</Text>
+          )}
           {selectUsers.map((user) => (
-            <Box key={user.id} marginRight="50px" position="relative">
-              <Box onClick={() => openSchedule(date, user)} cursor="pointer">
+            <Box w="120px" key={user.id} position="relative" mr="40px">
+              <Box
+                onClick={() => openSchedule(date, user)}
+                cursor="pointer"
+                fontSize="lg"
+                fontWeight="bold"
+              >
                 {user.name}
               </Box>
-              <Box zIndex="-1" position="absolute">
+              <Box zIndex="0" position="absolute" bg="white" shadow="md">
                 {[...Array(11)].map((_, i) => (
                   <Box
-                    height="40px"
-                    width="100px"
-                    borderTop="1px dashed"
-                    borderBottom="1px solid"
-                    marginBottom="40px"
+                    as="div"
+                    height="80px"
+                    width="120px"
+                    borderBottom="1px dashed"
                     boxSizing="border-box"
+                    borderLeft="1px solid"
+                    borderRight="1px solid"
                     key={i}
+                    cursor="pointer"
+                    _first={{ borderTop: "1px solid" }}
+                    onClick={() => openSchedule(date, user)}
                   ></Box>
                 ))}
               </Box>
@@ -123,7 +150,9 @@ const DailySchedule: FC<Props> = memo((props) => {
                       key={schedule.id}
                       backgroundColor={schedule.scheduleKind?.color}
                       position="absolute"
-                      width="100px"
+                      width="118px"
+                      ml="1px"
+                      zIndex="1"
                       marginTop={`${
                         ((differenceInMinutes(
                           new Date(schedule.startAt),
@@ -132,7 +161,7 @@ const DailySchedule: FC<Props> = memo((props) => {
                           480) *
                           80) /
                           60 +
-                        40
+                        80
                       }px`}
                       height={`${
                         (differenceInMinutes(
@@ -147,7 +176,20 @@ const DailySchedule: FC<Props> = memo((props) => {
                         openEditSchedule(schedule);
                       }}
                     >
-                      {schedule.description}
+                      <Box textAlign="end" px={1}>
+                        {schedule.isLocked && <LockIcon color="gray.500" />}
+                      </Box>
+                      <Text
+                        as="h1"
+                        fontSize="lg"
+                        textAlign="center"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                        px={1}
+                      >
+                        {schedule.description}
+                      </Text>
                     </Box>
                   )
               )}
@@ -163,14 +205,21 @@ const DailySchedule: FC<Props> = memo((props) => {
         targetUser={targetUser}
         teamUser={selectUsers}
         weeklySchedules={weeklySchedules}
+        dailySchedules={dailySchedules}
+        setWeeklySchedules={setWeeklySchedules}
+        setDailySchedules={setDailySchedules}
       />
       <EditScheduleModal
+        mode={mode}
         isOpen={isModalOpen}
         onClose={closeEditSchedule}
         schedule={targetSchedule}
         tasks={tasks}
         teamUser={selectUsers}
         weeklySchedules={weeklySchedules}
+        dailySchedules={dailySchedules}
+        setWeeklySchedules={setWeeklySchedules}
+        setDailySchedules={setDailySchedules}
       />
     </>
   );

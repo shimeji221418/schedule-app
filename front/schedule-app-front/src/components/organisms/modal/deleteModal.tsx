@@ -1,4 +1,5 @@
 import {
+  Box,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -29,9 +30,12 @@ const DeleteModal: FC<Props> = memo((props) => {
           ※削除してしまうと元に戻すことは出来ません
         </ModalBody>
         <ModalFooter>
-          <PrimaryButton onClick={onClose} color="cyan" size="md">
-            Close
-          </PrimaryButton>
+          <Box mr={2}>
+            <PrimaryButton onClick={onClose} color="cyan" size="md">
+              Close
+            </PrimaryButton>
+          </Box>
+
           <PrimaryButton onClick={handleDelete} color="red" size="md">
             Delete
           </PrimaryButton>

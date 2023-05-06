@@ -11,13 +11,15 @@ type Props = {
   date: string;
 };
 
-export const useGetSchedules = (id: number, mode?: "team" | "custom") => {
+export const useGetSchedules = (id?: number, mode?: "team" | "custom") => {
   const auth = getAuth(app);
   const [date, setDate] = useState<Date>(new Date());
+
   const { loginUser } = useAuthContext();
   const [weeklySchedules, setWeeklySchedules] = useState<Array<scheduleType>>(
     []
   );
+  const [allSchedules, setAllSchedules] = useState<Array<scheduleType>>([]);
   const [dailySchedules, setDailySchedules] = useState<Array<scheduleType>>([]);
   const [userIds, setUserIds] = useState<Array<number>>([]);
 
@@ -131,6 +133,22 @@ export const useGetSchedules = (id: number, mode?: "team" | "custom") => {
     }
   }, [userIds, date]);
 
+  // const getAllSchedules = useCallback(async () => {
+  //   try {
+  //     const token = await auth.currentUser?.getIdToken(true);
+  //     const props: BaseClientWithAuthType = {
+  //       method: "get",
+  //       url: "/schedules/",
+  //       token: token!,
+  //     };
+  //     const res = await BaseClientWithAuth(props);
+  //     setAllSchedules(res.data);
+  //     console.log(res.data);
+  //   } catch (e: any) {
+  //     console.log(e);
+  //   }
+  // }, [allSchedules]);
+
   useEffect(() => {
     if (loginUser && date && id && mode == "team") {
       const day = format(date, "yyyy-MM-dd");
@@ -151,6 +169,7 @@ export const useGetSchedules = (id: number, mode?: "team" | "custom") => {
 
   return {
     getSchedules,
+    allSchedules,
     weeklySchedules,
     setWeeklySchedules,
     dailySchedules,

@@ -7,6 +7,7 @@ import { TeamType } from "@/types/api/team";
 import { useAuthContext } from "@/provider/AuthProvider";
 import {
   Box,
+  Divider,
   InputGroup,
   InputLeftAddon,
   Select,
@@ -19,9 +20,13 @@ import { useGetTeams } from "@/hooks/useGetTeams";
 import DeleteModal from "@/components/organisms/modal/deleteModal";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { GetUserType } from "@/types/api/user";
+import PrimaryButton from "@/components/atoms/PrimaryButton";
+import { ChevronLeftIcon } from "@chakra-ui/icons";
+import { useRouter } from "next/navigation";
 
 const DeleteUser = () => {
   const auth = getAuth(app);
+  const router = useRouter();
   const { loginUser } = useAuthContext();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [targetTeam, setTargetTeam] = useState<TeamType>({
@@ -36,7 +41,7 @@ const DeleteUser = () => {
     role: "",
     teamId: 0,
   });
-  const { teams, getTeamsWithAuth } = useGetTeams();
+  const { teams, getTeamsWithoutAuth } = useGetTeams();
   const { teamUser } = useGetTeamUsers(targetTeam.id);
   const handleSelectChange = useCallback(
     (e: ChangeEvent<HTMLSelectElement>) => {
@@ -77,12 +82,18 @@ const DeleteUser = () => {
   };
 
   useEffect(() => {
-    getTeamsWithAuth({ auth });
+    getTeamsWithoutAuth();
   }, []);
   return (
     <>
-      <InputGroup>
-        <InputLeftAddon children="team" bg="cyan.600" color="white" />
+      <InputGroup w="500px" m={"auto"} mt={2} mb={5}>
+        <InputLeftAddon
+          children="team"
+          bg="cyan.600"
+          color="white"
+          fontSize={"lg"}
+          fontWeight={"bold"}
+        />
         <Select name="id" onChange={handleSelectChange}>
           <option key={0} value={1}>
             ALL
@@ -98,6 +109,7 @@ const DeleteUser = () => {
           )}
         </Select>
       </InputGroup>
+      <Divider borderColor={"gray.400"} />
       <Wrap spacing={6} m={6}>
         {teamUser.map((user) => (
           <WrapItem key={user.id}>
@@ -113,6 +125,27 @@ const DeleteUser = () => {
             </Box>
           </WrapItem>
         ))}
+        <WrapItem>
+          <Box
+            display={"flex"}
+            alignContent="center"
+            justifyContent={"center"}
+            w="240px"
+            h={"303px"}
+            alignItems={"center"}
+          >
+            <PrimaryButton
+              size="lg"
+              color="green"
+              onClick={() => {
+                router.push("/admin/");
+              }}
+            >
+              <ChevronLeftIcon />
+              戻る
+            </PrimaryButton>
+          </Box>
+        </WrapItem>
       </Wrap>
       <DeleteModal
         isOpen={isOpen}

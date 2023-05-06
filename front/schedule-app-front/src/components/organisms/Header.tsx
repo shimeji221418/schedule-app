@@ -4,7 +4,9 @@ import {
   Flex,
   Heading,
   HStack,
-  Link,
+  Text,
+  textDecoration,
+  Tooltip,
   useDisclosure,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
@@ -15,6 +17,9 @@ import { app } from "../../../firebase";
 import MenuDrawer from "../molecules/MenuDrawer";
 import MenuIconButton from "../atoms/menuIconButton";
 import { useAuthContext } from "@/provider/AuthProvider";
+import Link from "next/link";
+import PrimaryButton from "../atoms/PrimaryButton";
+import { useMessage } from "@/hooks/useMessage";
 
 const Header: FC = memo(() => {
   const router = useRouter();
@@ -22,10 +27,13 @@ const Header: FC = memo(() => {
   const { loginUser } = useAuthContext();
   const { isOpen, onClose, onOpen } = useDisclosure();
   const admin: boolean = loginUser?.role === "admin";
-  const handleLogout = useCallback(async () => {
-    await signOut(auth);
-    router.push("/login");
-  }, [auth, router]);
+  const { showMessage } = useMessage();
+  const handleLogout = async () => {
+    await signOut(auth).then(() => {
+      router.push("/login");
+      showMessage({ title: "ログアウトしました", status: "info" });
+    });
+  };
   return (
     <>
       {loginUser && (
@@ -37,20 +45,44 @@ const Header: FC = memo(() => {
             justify="space-between"
             width="100%"
           >
-            <Heading
-              as="h1"
-              fontSize={{ base: "xl", md: "2xl" }}
-              fontWeight="bold"
-              color="white"
-            >
-              <Link href="/">Schedule-app</Link>
-            </Heading>
+            <Tooltip bg="gray.500" fontWeight="bold" label="ホーム画面へ">
+              <Heading
+                as="h1"
+                fontSize={{ base: "xl", md: "2xl" }}
+                fontWeight="bold"
+                color="white"
+              >
+                <Link href="/">
+                  <Text _hover={{ textDecoration: "underline" }}>
+                    Schedule-app
+                  </Text>
+                </Link>
+              </Heading>
+            </Tooltip>
+
             <Flex color="white" align="center">
               <HStack spacing={6} display={{ base: "none", md: "flex" }}>
-                {admin && <Link href="/admin">管理者ページ</Link>}
-                <Link href="/users">ユーザー一覧</Link>
-                <Link href="/schedules">個人スケジュール</Link>
-                <Link onClick={handleLogout}>ログアウト</Link>
+                {admin && (
+                  <Link href="/admin">
+                    <Text _hover={{ textDecoration: "underline" }}>
+                      管理者ページ
+                    </Text>
+                  </Link>
+                )}
+                <Link href="/users">
+                  <Text _hover={{ textDecoration: "underline" }}>
+                    ユーザー一覧
+                  </Text>
+                </Link>
+                <Link href="/schedules">
+                  <Text _hover={{ textDecoration: "underline" }}>
+                    個人スケジュール
+                  </Text>
+                </Link>
+                {/* <Link onClick={handleLogout}>ログアウト</Link> */}
+                <PrimaryButton onClick={handleLogout} color="blue" size="sm">
+                  ログアウト
+                </PrimaryButton>
               </HStack>
               <Box ml={4}>
                 <MenuIconButton onOpen={onOpen} />

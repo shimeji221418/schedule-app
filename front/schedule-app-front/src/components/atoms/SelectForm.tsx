@@ -19,7 +19,7 @@ type Props = {
   name: string;
   handleonChange: (e: ChangeEvent<HTMLSelectElement>) => void;
   message: string;
-  value?: number;
+  value?: number | string;
   isDisabled?: boolean;
   isReadOnly?: boolean;
 };
@@ -50,7 +50,14 @@ const SelectForm: FC<Props> = memo((props) => {
   return (
     <>
       <InputGroup>
-        <InputLeftAddon children={title} bg="cyan.600" color="white" />
+        <InputLeftAddon
+          children={title}
+          bg="cyan.400"
+          fontWeight="bold"
+          color="white"
+          w="100px"
+          justifyContent="center"
+        />
         <Select
           value={value}
           {...register(`${name}`, {
@@ -58,9 +65,7 @@ const SelectForm: FC<Props> = memo((props) => {
             onChange: (e) => handleonChange(e),
           })}
           name={name}
-          onChange={(e) => handleonChange(e)}
           disabled={isDisabled}
-          // placeholder={title}
         >
           {teams && (
             <>
@@ -91,7 +96,7 @@ const SelectForm: FC<Props> = memo((props) => {
           )}
           {teamUsers && (
             <>
-              <option selected hidden value="0">
+              <option hidden value={"DEFAULT"}>
                 選択してください
               </option>
               {teamUsers.map((user) => (

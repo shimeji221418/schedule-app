@@ -1,6 +1,6 @@
 "use client";
 import { app } from "../../firebase";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import React, {
   createContext,
   Dispatch,
@@ -19,6 +19,9 @@ import { Text } from "@chakra-ui/react";
 
 export type AuthContextType = {
   loginUser: LoginUserType;
+  userCheck: boolean;
+  setUserCheck: Dispatch<SetStateAction<boolean>>;
+  setLoginUser: Dispatch<SetStateAction<LoginUserType>>;
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
 };
@@ -36,9 +39,13 @@ export const AuthProvider: FC<Props> = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [loginUser, setLoginUser] = useState<LoginUserType>(null);
+  const [userCheck, setUserCheck] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const value = {
     loginUser,
+    userCheck,
+    setUserCheck,
+    setLoginUser,
     setLoading,
     loading,
   };
@@ -56,17 +63,21 @@ export const AuthProvider: FC<Props> = ({ children }) => {
   };
 
   useEffect(() => {
+    isAdmin();
+  }, [loginUser]);
+
+  useEffect(() => {
     const onCurrentUser = async () => {
       try {
         const token = await auth.currentUser?.getIdToken(true);
         const data = { uid: auth.currentUser?.uid };
+        const config: BaseClientWithAuthType = {
+          method: "get",
+          url: "/users/current",
+          token: token!,
+          params: data,
+        };
         if (auth.currentUser) {
-          const config: BaseClientWithAuthType = {
-            method: "get",
-            url: "/users/current",
-            token: token!,
-            params: data,
-          };
           const res = await BaseClientWithAuth(config);
           setLoginUser(res.data);
           console.log(res.data);
@@ -87,14 +98,10 @@ export const AuthProvider: FC<Props> = ({ children }) => {
       onCurrentUser();
     });
     unsubscribed();
-  }, []);
-
-  useEffect(() => {
-    isAdmin();
-  }, [loginUser]);
+  }, [userCheck]);
 
   if (loading) {
-    return <>Loading...</>;
+    return <Text>Loading...</Text>;
   } else {
     return (
       <>

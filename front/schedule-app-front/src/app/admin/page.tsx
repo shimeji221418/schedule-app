@@ -27,7 +27,13 @@ const Admin = () => {
               >
                 ユーザー削除
               </PrimaryButton>
-              <PrimaryButton onClick={() => {}} size="lg" color="cyan">
+              <PrimaryButton
+                onClick={() => {
+                  router.push("/admin/team/new");
+                }}
+                size="lg"
+                color="cyan"
+              >
                 新チーム作成
               </PrimaryButton>
               <PrimaryButton

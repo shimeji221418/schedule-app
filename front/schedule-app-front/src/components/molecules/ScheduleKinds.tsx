@@ -1,6 +1,6 @@
 import { useAuthContext } from "@/provider/AuthProvider";
 import { GetTaskType } from "@/types/api/schedule_kind";
-import { Box, Button, Flex } from "@chakra-ui/react";
+import { Box, Button, Flex, Link } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import React, { FC } from "react";
 
@@ -16,7 +16,7 @@ const ScheduleKinds: FC<Props> = (props) => {
   return (
     <>
       {loginUser && (
-        <Flex justifyContent="end" width="100%">
+        <Flex justifyContent="end">
           {tasks.map((task) =>
             loginUser.role !== "admin" ? (
               <Box
@@ -38,7 +38,9 @@ const ScheduleKinds: FC<Props> = (props) => {
                   marginRight={1}
                   textAlign="center"
                   bg={task.color}
-                  onClick={() => router.push(`/schedule_kind/edit/${task.id}`)}
+                  onClick={() =>
+                    router.push(`/admin/schedule_kind/edit/${task.id}`)
+                  }
                 >
                   {task.name}
                 </Button>
@@ -46,9 +48,11 @@ const ScheduleKinds: FC<Props> = (props) => {
             )
           )}
           {loginUser.role === "admin" && (
-            <Button onClick={() => router.push("/admin/schedule_kind/new")}>
-              +
-            </Button>
+            <>
+              <Button onClick={() => router.push("/admin/schedule_kind/new")}>
+                +
+              </Button>
+            </>
           )}
         </Flex>
       )}

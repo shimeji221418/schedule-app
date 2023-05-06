@@ -20,15 +20,18 @@ import {
 import InputForm from "@/components/atoms/InputForm";
 import FormButton from "@/components/atoms/FormButton";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
+import { useMessage } from "@/hooks/useMessage";
+import { ChevronLeftIcon } from "@chakra-ui/icons";
 
 const NewTeam = () => {
   const auth = getAuth(app);
   const router = useRouter();
+  const { showMessage } = useMessage();
   const [newTeam, setNewTeam] = useState<NewTeamType>({
     name: "",
   });
   const { loginUser, loading } = useAuthContext();
-  const { teams, getTeamsWithAuth } = useGetTeams();
+  const { teams, getTeamsWithoutAuth } = useGetTeams();
 
   const handleonChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +44,7 @@ const NewTeam = () => {
   );
 
   useEffect(() => {
-    getTeamsWithAuth({ auth });
+    getTeamsWithoutAuth();
   }, []);
 
   const handleonSubmit = () => {
@@ -61,10 +64,12 @@ const NewTeam = () => {
           };
           const res = await BaseClientWithAuth(props);
           console.log(res.data);
+          showMessage({ title: "新規作成しました", status: "success" });
           location.reload();
         }
       } catch (e: any) {
         console.log(e);
+        showMessage({ title: `${e.message}`, status: "error" });
       }
     };
     createTeam();
@@ -78,18 +83,18 @@ const NewTeam = () => {
           <Flex justify="center" mt={10}>
             <Box
               w="md"
-              h="220px"
+              h="250px"
               bg="white"
               shadow="md"
               p={4}
               borderRadius="md"
               textAlign="center"
-              mr={4}
+              mr={10}
             >
-              <Heading as="h2">New Team</Heading>
+              <Heading as="h2">新チーム作成</Heading>
               <Divider my={4} borderColor="gray.400" />
               <form onSubmit={handleSubmit(handleonSubmit)}>
-                <Stack spacing={2}>
+                <Stack spacing={4}>
                   <InputForm
                     title="チーム名"
                     name="name"
@@ -99,7 +104,7 @@ const NewTeam = () => {
                   />
 
                   <FormButton type="submit" color="cyan" size="md">
-                    Save
+                    保存
                   </FormButton>
                 </Stack>
               </form>
@@ -115,7 +120,7 @@ const NewTeam = () => {
             >
               <Heading as="h2">チーム一覧</Heading>
               <Divider my={4} borderColor="gray.400" />
-              <Stack spacing={3}>
+              <Stack spacing={4}>
                 {teams.map((team) => (
                   <Flex
                     align="center"
@@ -127,7 +132,9 @@ const NewTeam = () => {
                     key={team.id}
                     height="auto"
                   >
-                    <Text as="h2">{team.name}</Text>
+                    <Text as="h2" color="white" fontSize="lg">
+                      {team.name}
+                    </Text>
                     <PrimaryButton
                       size="sm"
                       color="yellow"
@@ -141,6 +148,18 @@ const NewTeam = () => {
               </Stack>
             </Box>
           </Flex>
+          <Box display={"flex"} justifyContent={"center"} mt={10}>
+            <PrimaryButton
+              size="lg"
+              color="green"
+              onClick={() => {
+                router.push("/admin/");
+              }}
+            >
+              <ChevronLeftIcon />
+              戻る
+            </PrimaryButton>
+          </Box>
         </>
       ) : (
         <Text>アクセス権限がありません。ホーム画面の遷移します。</Text>

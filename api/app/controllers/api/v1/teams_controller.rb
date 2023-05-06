@@ -13,7 +13,7 @@ class Api::V1::TeamsController < Api::V1::ApplicationController
     end
 
     def create
-        team = Team.create(team_params)
+        team = Team.create!(team_params)
         if team 
             render status: 201, json: team
         else
@@ -22,7 +22,7 @@ class Api::V1::TeamsController < Api::V1::ApplicationController
     end
 
     def update
-        if @team.update(team_params)
+        if @team.update!(team_params)
             render status: 200, json: @team
         else
             render status: 400, json: {data: @team.errors}

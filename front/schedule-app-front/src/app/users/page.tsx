@@ -8,6 +8,7 @@ import UserCard from "@/components/organisms/users/UserCard";
 import { useAuthContext } from "@/provider/AuthProvider";
 import {
   Box,
+  Divider,
   InputGroup,
   InputLeftAddon,
   Select,
@@ -26,7 +27,7 @@ const Users = () => {
   const { loading, loginUser } = useAuthContext();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { teams, getTeamsWithAuth } = useGetTeams();
+  const { teams, getTeamsWithoutAuth } = useGetTeams();
   const [targetTeam, setTargetTeam] = useState<TeamType>({
     id: 1,
     name: "",
@@ -70,14 +71,20 @@ const Users = () => {
   }, [isModalOpen]);
 
   useEffect(() => {
-    getTeamsWithAuth({ auth });
+    getTeamsWithoutAuth();
   }, []);
   return (
     <>
       {!loading && loginUser && (
         <>
-          <InputGroup>
-            <InputLeftAddon children="team" bg="cyan.600" color="white" />
+          <InputGroup w="500px" m={"auto"} mt={2} mb={5}>
+            <InputLeftAddon
+              children="team"
+              bg="cyan.600"
+              color="white"
+              fontSize={"lg"}
+              fontWeight={"bold"}
+            />
             <Select name="id" onChange={handleSelectChange}>
               <option key={0} value={1}>
                 ALL
@@ -93,6 +100,7 @@ const Users = () => {
               )}
             </Select>
           </InputGroup>
+          <Divider borderColor={"gray.400"} />
           <Wrap spacing={6} m={6}>
             {teamUser.map((user) => (
               <WrapItem key={user.id}>

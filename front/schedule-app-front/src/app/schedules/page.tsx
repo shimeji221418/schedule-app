@@ -12,7 +12,13 @@ import {
   startOfWeek,
   subDays,
 } from "date-fns";
-import { Box, Flex, InputGroup, useDisclosure } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  InputGroup,
+  Tooltip,
+  useDisclosure,
+} from "@chakra-ui/react";
 import ja from "date-fns/locale/ja";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
@@ -28,12 +34,15 @@ import { useGetTasks } from "@/hooks/useGetTasks";
 import { useOpenSchedule } from "@/hooks/schedule/useOpenSchedule";
 import { useOpenEditSchedule } from "@/hooks/schedule/useOpenEditSchedule";
 import { useGetAllUsers } from "@/hooks/useAllUsers";
+import { useGetSchedules } from "@/hooks/useGetSchedules";
+import { ArrowLeftIcon, ArrowRightIcon } from "@chakra-ui/icons";
 
 const MySchedule = () => {
   const auth = getAuth(app);
   const today: Date = new Date();
   const { isOpen, onClose, onOpen } = useDisclosure();
-  const { loginUser, loading } = useAuthContext();
+  const [mode, setMode] = useState<"team" | "custom">("team");
+  const { loginUser } = useAuthContext();
   const { targetDate, targetUser, openSchedule } = useOpenSchedule({ onOpen });
   const { getTeamUsers, teamUser } = useGetTeamUsers(targetUser.teamId);
   const { targetSchedule, isModalOpen, openEditSchedule, closeEditSchedule } =
@@ -45,6 +54,7 @@ const MySchedule = () => {
     start: startOfWeek(date),
     end: endOfWeek(date),
   });
+  const { setWeeklySchedules } = useGetSchedules();
 
   const nextWeek = useCallback(async () => {
     setDate(addDays(date, 7));
@@ -77,7 +87,6 @@ const MySchedule = () => {
     };
     getTask();
     getMySchedule();
-
     if (loginUser) {
       getTeamUsers({ team_id: loginUser?.teamId });
     }
@@ -85,19 +94,30 @@ const MySchedule = () => {
 
   return (
     <>
-      {!loading && loginUser && (
-        <>
+      {loginUser && (
+        <Box maxW="900px" m="auto" mt={2}>
           <ScheduleKinds tasks={tasks} />
-          <Flex justifyContent="center" textAlign="center">
-            <Box marginRight="400px">
-              <PrimaryButton size="md" color="cyan" onClick={prevWeek}>
-                ＜先週
-              </PrimaryButton>
+          <Flex
+            pt={4}
+            m="auto"
+            textAlign="center"
+            justify="space-between"
+            w="900px"
+          >
+            <Flex ml={"50px"}>
+              <Box mr={2}>
+                <PrimaryButton size="md" color="cyan" onClick={prevWeek}>
+                  <ArrowLeftIcon mr={1} />
+                  先週
+                </PrimaryButton>
+              </Box>
+
               <PrimaryButton size="md" color="cyan" onClick={nextWeek}>
-                来週＞
+                来週
+                <ArrowRightIcon ml={1} />
               </PrimaryButton>
-            </Box>
-            <InputGroup width="280px">
+            </Flex>
+            <InputGroup width="300px">
               <InputForm
                 type="date"
                 name="date"
@@ -106,13 +126,11 @@ const MySchedule = () => {
                 handleChange={(e) => {
                   setDate(new Date(e.target.value));
                 }}
-                width="auto"
                 message="日付を入力してください"
               />
             </InputGroup>
           </Flex>
-
-          <Box textAlign="center" fontSize="2xl">
+          <Box textAlign="center" fontSize="2xl" mb={4} mt={2}>
             {loginUser?.name}
           </Box>
 
@@ -129,25 +147,33 @@ const MySchedule = () => {
                 <Box key={i} textAlign="center" width="100px">
                   <Box>{format(day, "E", { locale: ja })}</Box>
                   <Box>{format(day, "MM/dd")}</Box>
-                  <Box position="absolute">
-                    {[...Array(11)].map((_, i) => (
-                      <Box
-                        as="div"
-                        height="80px"
-                        width="100px"
-                        borderRight="1px solid"
-                        borderBottom="1px dashed"
-                        boxSizing="border-box"
-                        key={i}
-                        backgroundColor="white"
-                        zIndex="-1"
-                        cursor="pointer"
-                        onClick={() => {
-                          openSchedule(day, loginUser);
-                        }}
-                      ></Box>
-                    ))}
-                  </Box>
+                  <Tooltip
+                    bg="gray.500"
+                    fontWeight="bold"
+                    label="新規予定は空マスをクリック"
+                    placement="right"
+                  >
+                    <Box position="absolute">
+                      {[...Array(11)].map((_, i) => (
+                        <Box
+                          as="div"
+                          height="80px"
+                          width="100px"
+                          borderRight="1px solid"
+                          borderBottom="1px dashed"
+                          boxSizing="border-box"
+                          key={i}
+                          backgroundColor="white"
+                          zIndex="-1"
+                          cursor="pointer"
+                          onClick={() => {
+                            openSchedule(day, loginUser);
+                          }}
+                        ></Box>
+                      ))}
+                    </Box>
+                  </Tooltip>
+
                   <Box>
                     {mySchedules.map(
                       (schedule) =>
@@ -182,6 +208,10 @@ const MySchedule = () => {
                               1
                             }px`}
                             boxShadow="md"
+                            whiteSpace="nowrap"
+                            overflow="hidden"
+                            textOverflow="ellipsis"
+                            px={1}
                           >
                             {schedule.description}
                           </Box>
@@ -198,15 +228,22 @@ const MySchedule = () => {
             date={targetDate}
             tasks={tasks}
             targetUser={targetUser}
+            weeklySchedules={mySchedules}
+            setWeeklySchedules={setWeeklySchedules}
+            mySchedules={mySchedules}
+            setMySchedules={setMySchedules}
           />
           <EditScheduleModal
+            mode={mode}
             isOpen={isModalOpen}
             onClose={closeEditSchedule}
             tasks={tasks}
             schedule={targetSchedule}
             teamUser={teamUser}
+            weeklySchedules={mySchedules}
+            setWeeklySchedules={setWeeklySchedules}
           />
-        </>
+        </Box>
       )}
     </>
   );

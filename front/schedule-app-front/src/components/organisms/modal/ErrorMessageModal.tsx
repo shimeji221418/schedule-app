@@ -22,9 +22,11 @@ const ErrorMessageModal: FC<Props> = (props) => {
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Caution</ModalHeader>
+        <ModalHeader as="h1" textAlign="center" color="red">
+          Caution!
+        </ModalHeader>
         <ModalCloseButton />
-        <ModalBody color="red" textAlign="center" fontWeight="bold">
+        <ModalBody textAlign="center" fontWeight="bold">
           {message}
         </ModalBody>
         <ModalFooter>

@@ -44,19 +44,38 @@ import { useAuthContext } from "@/provider/AuthProvider";
 import { useGetSchedules } from "@/hooks/useGetSchedules";
 import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
 import ErrorMessageModal from "./ErrorMessageModal";
+import { useMessage } from "@/hooks/useMessage";
 
 type Props = {
+  mode: "team" | "custom";
+
   isOpen: boolean;
   onClose: () => void;
   schedule: scheduleType | null;
   tasks: Array<GetTaskType>;
   teamUser: Array<GetUserType>;
-  weeklySchedules?: Array<scheduleType>;
+  weeklySchedules: Array<scheduleType>;
+  dailySchedules?: Array<scheduleType>;
+  setWeeklySchedules: Dispatch<SetStateAction<scheduleType[]>>;
+  setDailySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
 };
 
 const EditScheduleModal: FC<Props> = memo((props) => {
-  const { isOpen, onClose, schedule, tasks, teamUser, weeklySchedules } = props;
-  const { setLoading, loading, loginUser } = useAuthContext();
+  const {
+    isOpen,
+    onClose,
+    schedule,
+    tasks,
+    teamUser,
+    mode,
+    setWeeklySchedules,
+    setDailySchedules,
+    weeklySchedules,
+    dailySchedules,
+  } = props;
+  const { loading, loginUser } = useAuthContext();
+  const { showMessage } = useMessage();
+  const { getSchedules } = useGetSchedules();
   const auth = getAuth(app);
   const [isDeleteModal, setIsDeleteModal] = useState(false);
   const { handleSubmit } = useFormContext();
@@ -86,6 +105,8 @@ const EditScheduleModal: FC<Props> = memo((props) => {
 
   const isDisabled = schedule?.isLocked && schedule?.userId !== loginUser?.id;
 
+  const { allSchedules } = useGetSchedules();
+
   const handleStartTimeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const target = e.target;
     const name = target.name;
@@ -107,7 +128,9 @@ const EditScheduleModal: FC<Props> = memo((props) => {
     });
   }, [startDay, endTime, startTime]);
 
-  const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
+  const handleonChange = (
+    e: ChangeEvent<HTMLTextAreaElement> | ChangeEvent<HTMLSelectElement>
+  ) => {
     const target = e.target;
     const name = target.name;
     const value = target.value;
@@ -148,7 +171,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
         endMinutes: format(endDate, "mm"),
       });
     }
-    setLoading(false);
   }, [schedule]);
 
   const handleStartChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -162,23 +184,16 @@ const EditScheduleModal: FC<Props> = memo((props) => {
   //   setEndDay(e.target.value);
   // };
 
-  const overlapSchedules: scheduleType[] | undefined = weeklySchedules?.filter(
-    (schedule) =>
-      schedule.userId == editSchedule.user_id &&
-      schedule.id != editSchedule.id &&
-      new Date(schedule.startAt) < new Date(editSchedule.end_at) &&
-      new Date(schedule.endAt) > new Date(editSchedule.start_at)
-  );
+  // const overlapSchedules: scheduleType[] | undefined = allSchedules?.filter(
+  //   (schedule) =>
+  //     schedule.userId == editSchedule.user_id &&
+  //     schedule.id != editSchedule.id &&
+  //     new Date(schedule.startAt) < new Date(editSchedule.end_at) &&
+  //     new Date(schedule.endAt) > new Date(editSchedule.start_at)
+  // );
 
   const timeCheck =
     new Date(editSchedule.start_at) >= new Date(editSchedule.end_at);
-
-  const handleonChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const target = e.target;
-    const name = target.name;
-    const value = target.value;
-    setEditSchedule({ ...editSchedule, [name]: value });
-  };
 
   const handleDelete = async () => {
     try {
@@ -192,6 +207,7 @@ const EditScheduleModal: FC<Props> = memo((props) => {
       console.log(res.data);
       onClose();
       CloseDeleteModal();
+      showMessage({ title: "削除しました", status: "warning" });
       location.reload();
     } catch (e: any) {
       console.log(e);
@@ -204,13 +220,13 @@ const EditScheduleModal: FC<Props> = memo((props) => {
         if (schedule) {
           if (timeCheck) {
             errorModalOpen("終了時刻が開始時刻より早く設定されています");
-          } else if (overlapSchedules?.length !== 0) {
-            const errorMessage = overlapSchedules?.map(
-              (schedule) => schedule.description
-            );
-            errorModalOpen(
-              `同時間帯に "${errorMessage}" が既に登録されています`
-            );
+            // } else if (overlapSchedules?.length !== 0) {
+            //   const errorMessage = overlapSchedules?.map(
+            //     (schedule) => schedule.description
+            //   );
+            //   errorModalOpen(
+            //     `同時間帯に "${errorMessage}" が既に登録されています`
+            //   );
           } else {
             const token = await auth.currentUser?.getIdToken(true);
             const data = {
@@ -230,13 +246,28 @@ const EditScheduleModal: FC<Props> = memo((props) => {
               params: data,
             };
             const res = await BaseClientWithAuth(props);
-            console.log(res.data);
+
+            const weeklyIndex = weeklySchedules.findIndex(
+              (schedule) => schedule.id === res.data.id
+            );
+            weeklySchedules[weeklyIndex] = res.data;
+            setWeeklySchedules([...weeklySchedules]);
+
+            if (dailySchedules && setDailySchedules) {
+              const dailyIndex = dailySchedules.findIndex(
+                (schedule) => schedule.id === res.data.id
+              );
+              dailySchedules[dailyIndex] = res.data;
+              setDailySchedules([...dailySchedules]);
+            }
+
             onClose();
-            location.reload();
+            showMessage({ title: "更新しました", status: "success" });
           }
         }
       } catch (e: any) {
-        console.log(e);
+        console.log(e.response.data.data.base[0]);
+        errorModalOpen(e.response.data.data.base[0]);
       }
     };
     updateSchedule();
@@ -249,7 +280,9 @@ const EditScheduleModal: FC<Props> = memo((props) => {
           <Modal isOpen={isOpen} onClose={onClose}>
             <ModalOverlay />
             <ModalContent>
-              <ModalHeader>Edit Schedule</ModalHeader>
+              <ModalHeader m={"auto"} fontSize="2xl">
+                Edit Schedule
+              </ModalHeader>
               <ModalCloseButton />
 
               <form onSubmit={handleSubmit(handleonSubmit)}>
@@ -258,7 +291,7 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                     <SelectForm
                       title="User"
                       name="user_id"
-                      handleonChange={handleSelectChange}
+                      handleonChange={handleonChange}
                       teamUsers={teamUser}
                       value={editSchedule.user_id}
                       message="Userが入力されていません"
@@ -267,9 +300,12 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                     <Box>
                       <InputGroup>
                         <InputLeftAddon
+                          w="100px"
+                          justifyContent={"center"}
                           children="日時"
-                          bg="cyan.600"
+                          bg="cyan.400"
                           color="white"
+                          fontWeight="bold"
                         />
                         <Input
                           type="date"
@@ -286,6 +322,7 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                           children="開始"
                           bg="cyan.600"
                           color="white"
+                          fontWeight="bold"
                         />
                         <Select
                           name="startHour"
@@ -330,6 +367,7 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                           children="終了"
                           bg="cyan.600"
                           color="white"
+                          fontWeight="bold"
                         />
                         <Select
                           name="endHour"
@@ -369,9 +407,9 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                     </Box>
 
                     <SelectForm
-                      title="カテゴリー"
+                      title="カテゴリ"
                       name="schedule_kind_id"
-                      handleonChange={handleSelectChange}
+                      handleonChange={handleonChange}
                       tasks={tasks}
                       value={editSchedule.schedule_kind_id}
                       message="カテゴリーが入力されていません"
@@ -380,8 +418,11 @@ const EditScheduleModal: FC<Props> = memo((props) => {
 
                     <InputGroup>
                       <InputLeftAddon
+                        w={"100px"}
+                        justifyContent="center"
+                        fontWeight={"bold"}
                         children="詳細"
-                        bg="cyan.600"
+                        bg="cyan.400"
                         color="white"
                       />
                       <Textarea
@@ -411,12 +452,14 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                 <ModalFooter>
                   {!schedule.isLocked && (
                     <>
-                      <FormButton type="submit" color="cyan" size="md">
-                        Edit
-                      </FormButton>
+                      <Box mr={2}>
+                        <FormButton type="submit" color="cyan" size="lg">
+                          Edit
+                        </FormButton>
+                      </Box>
                       <PrimaryButton
                         onClick={OpenDeleteModal}
-                        size="md"
+                        size="lg"
                         color="red"
                       >
                         Delete
@@ -426,12 +469,14 @@ const EditScheduleModal: FC<Props> = memo((props) => {
                   {schedule.isLocked &&
                     loginUser.id === editSchedule.user_id && (
                       <>
-                        <FormButton type="submit" color="cyan" size="md">
-                          Edit
-                        </FormButton>
+                        <Box mr={2}>
+                          <FormButton type="submit" color="cyan" size="lg">
+                            Edit
+                          </FormButton>
+                        </Box>
                         <PrimaryButton
                           onClick={OpenDeleteModal}
-                          size="md"
+                          size="lg"
                           color="red"
                         >
                           Delete

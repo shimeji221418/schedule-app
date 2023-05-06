@@ -6,7 +6,8 @@ import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { TeamType } from "@/types/api/team";
 import { EditUserType, GetUserType, LoginUserType } from "@/types/api/user";
 import {
-  Link,
+  Box,
+  Divider,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -15,6 +16,7 @@ import {
   ModalHeader,
   ModalOverlay,
   Stack,
+  Text,
 } from "@chakra-ui/react";
 import {
   Auth,
@@ -55,6 +57,7 @@ const UserDetailModal: FC<Props> = memo((props) => {
     password: "",
   });
   const { handleSubmit } = useFormContext();
+  const roles = ["general", "admin"];
 
   useEffect(() => {
     if (targetUser) {
@@ -71,17 +74,7 @@ const UserDetailModal: FC<Props> = memo((props) => {
   }, [targetUser, isOpen]);
 
   const handleChange = useCallback(
-    (e: ChangeEvent<HTMLInputElement>) => {
-      const target = e.target;
-      const name = target.name;
-      const value = target.value;
-      setEditUser({ ...editUser, [name]: value });
-    },
-    [editUser, setEditUser]
-  );
-
-  const handleSelectChange = useCallback(
-    (e: ChangeEvent<HTMLSelectElement>) => {
+    (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
       const target = e.target;
       const name = target.name;
       const value = target.value;
@@ -141,13 +134,17 @@ const UserDetailModal: FC<Props> = memo((props) => {
   const isReadOnly: boolean =
     loginUser?.id !== targetUser.id && loginUser?.role !== "admin";
 
+  const isAdminCheck: boolean = loginUser?.role !== "admin";
+
   return (
     <>
       {loginUser && (
         <Modal isOpen={isOpen} onClose={onClose}>
           <ModalOverlay />
           <ModalContent>
-            <ModalHeader>User Detail</ModalHeader>
+            <ModalHeader as="h1" textAlign="center">
+              ユーザー詳細
+            </ModalHeader>
             <ModalCloseButton />
             <form onSubmit={handleSubmit(handleOnSubmit)}>
               <ModalBody>
@@ -175,33 +172,61 @@ const UserDetailModal: FC<Props> = memo((props) => {
                     name="teamId"
                     value={editUser.teamId}
                     teams={teams}
-                    handleonChange={handleSelectChange}
-                    message="emailを入力してください"
+                    handleonChange={handleChange}
+                    message="teamを入力してください"
                     isDisabled={isReadOnly}
                   />
-                  {!isReadOnly && (
-                    <InputForm
-                      title="password"
-                      name="password"
-                      type="password"
-                      handleChange={handleChange}
-                      message="passwordを入力してください"
-                      isReadOnly={isReadOnly}
-                    />
-                  )}
+                  <SelectForm
+                    roles={roles}
+                    value={editUser.role}
+                    title="role"
+                    name="role"
+                    handleonChange={handleChange}
+                    message="ユーザー権限が入力されていません"
+                    isDisabled={isAdminCheck}
+                  ></SelectForm>
                 </Stack>
               </ModalBody>
-              <ModalFooter>
-                <PrimaryButton onClick={onClose} color="cyan" size="md">
-                  Close
-                </PrimaryButton>
+
+              <ModalBody>
                 {!isReadOnly && (
-                  <FormButton type="submit" color="yellow" size="md">
-                    edit
-                  </FormButton>
+                  <>
+                    <Box mt={10}>
+                      <Stack>
+                        <Text as="p" textAlign="end" fontSize="xs">
+                          ※ユーザー情報の更新にはパスワードが必要です
+                        </Text>
+                        <InputForm
+                          title="password"
+                          name="password"
+                          type="password"
+                          handleChange={handleChange}
+                          message="passwordを入力してください"
+                          isReadOnly={isReadOnly}
+                        />
+                        {!isReadOnly && (
+                          <FormButton type="submit" color="yellow" size="md">
+                            edit
+                          </FormButton>
+                        )}
+                      </Stack>
+                      {!isReadOnly && (
+                        <Divider borderColor="gray.400" mt={4} mb={4} />
+                      )}
+                    </Box>
+                  </>
                 )}
+              </ModalBody>
+
+              <ModalFooter>
                 {!isReadOnly && (
-                  <Link onClick={openPassModal}>Password変更はこちら</Link>
+                  <PrimaryButton
+                    color="green"
+                    size="md"
+                    onClick={openPassModal}
+                  >
+                    Password変更はこちら
+                  </PrimaryButton>
                 )}
               </ModalFooter>
             </form>

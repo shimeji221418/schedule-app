@@ -1,8 +1,10 @@
 import FormButton from "@/components/atoms/FormButton";
 import InputForm from "@/components/atoms/InputForm";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
+import { useMessage } from "@/hooks/useMessage";
 import { LoginUserType } from "@/types/api/user";
 import {
+  Box,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -10,6 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Stack,
 } from "@chakra-ui/react";
 import {
   Auth,
@@ -33,12 +36,13 @@ type Password = {
 };
 
 const EditPasswordModal: FC<Props> = (props) => {
-  const { isModalOpen, onClose, loginUser, auth } = props;
+  const { isModalOpen, onClose, auth } = props;
   const [password, setPassword] = useState<Password>({
     currentPassword: "",
     newPassword: "",
   });
   const { handleSubmit } = useFormContext();
+  const { showMessage } = useMessage();
 
   const handleChange = useCallback(
     (e: ChangeEvent<HTMLInputElement>) => {
@@ -59,10 +63,12 @@ const EditPasswordModal: FC<Props> = (props) => {
         );
         await reauthenticateWithCredential(auth.currentUser, credential);
         await updatePassword(auth.currentUser, password.newPassword);
-        console.log(auth.currentUser);
+        console.log(password);
+        showMessage({ title: "更新しました", status: "success" });
       }
     } catch (e: any) {
       console.log(e);
+      showMessage({ title: `${e.message}`, status: "error" });
     } finally {
       onClose();
       location.reload();
@@ -73,33 +79,38 @@ const EditPasswordModal: FC<Props> = (props) => {
     <Modal isOpen={isModalOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Edit Password</ModalHeader>
+        <ModalHeader as="h1" textAlign="center">
+          パスワード更新
+        </ModalHeader>
         <ModalCloseButton />
         <form onSubmit={handleSubmit(handlePasswordChange)}>
           <ModalBody>
-            <InputForm
-              title="current"
-              name="currentPassword"
-              type="password"
-              handleChange={handleChange}
-              message="現在のpasswordを入力してください"
-            />
-            <InputForm
-              title="new"
-              name="newPassword"
-              type="password"
-              handleChange={handleChange}
-              message="新しいpasswordを入力してください"
-            />
+            <Stack>
+              <InputForm
+                title="current"
+                name="currentPassword"
+                type="password"
+                handleChange={handleChange}
+                message="現在のpasswordを入力してください"
+              />
+              <InputForm
+                title="new"
+                name="newPassword"
+                type="password"
+                handleChange={handleChange}
+                message="新しいpasswordを入力してください"
+              />
+            </Stack>
           </ModalBody>
           <ModalFooter>
             <PrimaryButton onClick={onClose} color="cyan" size="md">
               Close
             </PrimaryButton>
-
-            <FormButton type="submit" color="yellow" size="md">
-              edit
-            </FormButton>
+            <Box ml={2}>
+              <FormButton type="submit" color="yellow" size="md">
+                edit
+              </FormButton>
+            </Box>
           </ModalFooter>
         </form>
       </ModalContent>

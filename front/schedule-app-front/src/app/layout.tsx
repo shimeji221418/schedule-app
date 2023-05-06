@@ -12,6 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
   if (pathname === "/login" || pathname === "/signup") {
     return (
       <html lang="en">
