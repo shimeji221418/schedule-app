@@ -1,6 +1,5 @@
 import { NewScheduleType, scheduleType } from "@/types/api/schedule";
 import { GetTaskType } from "@/types/api/schedule_kind";
-import { TeamType } from "@/types/api/team";
 import {
   Checkbox,
   Input,
@@ -15,9 +14,7 @@ import {
   ModalOverlay,
   Select,
   Stack,
-  Text,
   Textarea,
-  Tooltip,
 } from "@chakra-ui/react";
 import { app } from "../../../../firebase";
 import { getAuth } from "firebase/auth";
@@ -31,18 +28,15 @@ import React, {
   useState,
 } from "react";
 import SelectForm from "../../atoms/SelectForm";
-import { ChangeHandler, useFormContext } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import FormButton from "../../atoms/FormButton";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { hours, minutes } from "../../atoms";
 import { EndTimeType, StartTimeType } from "@/types";
-import { TargetUserType } from "@/app/page";
 import { GetUserType } from "@/types/api/user";
-import { format } from "date-fns";
 import ErrorMessageModal from "./ErrorMessageModal";
 import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
-import DailySchedule from "@/components/templates/DailySchedule";
 import { useMessage } from "@/hooks/useMessage";
 
 type Props = {
@@ -52,11 +46,11 @@ type Props = {
   targetUser?: GetUserType;
   teamUser?: Array<GetUserType>;
   tasks: Array<GetTaskType>;
-  weeklySchedules: Array<scheduleType>;
+  weeklySchedules?: Array<scheduleType>;
   mySchedules?: Array<scheduleType>;
   setMySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
   dailySchedules?: Array<scheduleType>;
-  setWeeklySchedules: Dispatch<SetStateAction<scheduleType[]>>;
+  setWeeklySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
   setDailySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
 };
 
@@ -186,7 +180,9 @@ const NewScheduleModal: FC<Props> = memo((props) => {
               params: data,
             };
             const res = await BaseClientWithAuth(props);
-            setWeeklySchedules([...weeklySchedules, res.data]);
+            if (weeklySchedules && setWeeklySchedules) {
+              setWeeklySchedules([...weeklySchedules, res.data]);
+            }
 
             if (dailySchedules && setDailySchedules) {
               setDailySchedules([...dailySchedules, res.data]);
@@ -200,7 +196,7 @@ const NewScheduleModal: FC<Props> = memo((props) => {
           }
         }
       } catch (e: any) {
-        console.log(e);
+        console.log(e.response);
         errorModalOpen(e.response.data.data.base[0]);
       }
     };

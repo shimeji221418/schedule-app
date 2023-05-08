@@ -214,7 +214,6 @@ const WeeklySchedule: FC<Props> = (props) => {
         setDailySchedules={setDailySchedules}
       />
       <EditScheduleModal
-        mode={mode}
         isOpen={isModalOpen}
         onClose={closeEditSchedule}
         schedule={targetSchedule}

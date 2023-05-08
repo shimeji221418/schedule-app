@@ -8,15 +8,7 @@ import { useAuthContext } from "@/provider/AuthProvider";
 import { useGetTeams } from "@/hooks/useGetTeams";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { useFormContext } from "react-hook-form";
-import {
-  Box,
-  Button,
-  Divider,
-  Flex,
-  Heading,
-  Stack,
-  Text,
-} from "@chakra-ui/react";
+import { Box, Divider, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 import InputForm from "@/components/atoms/InputForm";
 import FormButton from "@/components/atoms/FormButton";
 import PrimaryButton from "@/components/atoms/PrimaryButton";

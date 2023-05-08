@@ -12,7 +12,7 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
 
     def create
         schedule = Schedule.new(schedule_params)
-        if schedule.save!
+        if schedule.save
             render status: 201, json: schedule
         else
             render status: 400, json: {data: schedule.errors}
@@ -20,7 +20,7 @@ class Api::V1::SchedulesController < Api::V1::ApplicationController
     end
 
     def update
-        if @schedule.update!(schedule_params)
+        if @schedule.update(schedule_params)
             render status: 200, json: @schedule
         else
             render status: 400, json: {data: @schedule.errors}

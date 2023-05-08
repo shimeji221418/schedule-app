@@ -12,8 +12,8 @@ class Api::V1::ScheduleKindsController < Api::V1::ApplicationController
     end
 
     def create
-        schedule_kind = ScheduleKind.create!(schedule_kind_params)
-        if schedule_kind
+        schedule_kind = ScheduleKind.new(schedule_kind_params)
+        if schedule_kind.save
             render status: 201, json: schedule_kind
         else
             render status: 400, json: {data: schedule_kind.errors}
@@ -21,7 +21,7 @@ class Api::V1::ScheduleKindsController < Api::V1::ApplicationController
     end
 
     def update
-        if @schedule_kind.update!(schedule_kind_params)
+        if @schedule_kind.update(schedule_kind_params)
             render status: 200, json: @schedule_kind
         else
             render status: 400, json: {data: @schedule_kind.errors}

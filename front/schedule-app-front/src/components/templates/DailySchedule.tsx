@@ -1,13 +1,7 @@
 import { useOpenEditSchedule } from "@/hooks/schedule/useOpenEditSchedule";
 import { useOpenSchedule } from "@/hooks/schedule/useOpenSchedule";
 import { Box, Flex, Text, useDisclosure } from "@chakra-ui/react";
-import {
-  addDays,
-  differenceInMinutes,
-  format,
-  startOfDay,
-  subDays,
-} from "date-fns";
+import { addDays, differenceInMinutes, startOfDay, subDays } from "date-fns";
 
 import React, { Dispatch, FC, memo, SetStateAction, useCallback } from "react";
 import { times } from "../atoms";
@@ -42,18 +36,15 @@ const DailySchedule: FC<Props> = memo((props) => {
     userIds,
     targetTeam,
     dailySchedules,
-    weeklySchedules,
     today,
     date,
     setDate,
     selectUsers,
     tasks,
     setDailySchedules,
-    setWeeklySchedules,
   } = props;
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const { targetDate, targetUser, openSchedule, openSchedule2 } =
-    useOpenSchedule({ onOpen });
+  const { targetDate, targetUser, openSchedule } = useOpenSchedule({ onOpen });
   const { targetSchedule, isModalOpen, openEditSchedule, closeEditSchedule } =
     useOpenEditSchedule();
 
@@ -89,13 +80,6 @@ const DailySchedule: FC<Props> = memo((props) => {
           </PrimaryButton>
         </Box>
 
-        {/* <PrimaryButton
-          size="xs"
-          color="green"
-          onClick={() => openSchedule2(date)}
-        >
-          新規作成
-        </PrimaryButton> */}
         <Box>
           <ScheduleKinds tasks={tasks} />
         </Box>
@@ -204,21 +188,16 @@ const DailySchedule: FC<Props> = memo((props) => {
         tasks={tasks}
         targetUser={targetUser}
         teamUser={selectUsers}
-        weeklySchedules={weeklySchedules}
         dailySchedules={dailySchedules}
-        setWeeklySchedules={setWeeklySchedules}
         setDailySchedules={setDailySchedules}
       />
       <EditScheduleModal
-        mode={mode}
         isOpen={isModalOpen}
         onClose={closeEditSchedule}
         schedule={targetSchedule}
         tasks={tasks}
         teamUser={selectUsers}
-        weeklySchedules={weeklySchedules}
         dailySchedules={dailySchedules}
-        setWeeklySchedules={setWeeklySchedules}
         setDailySchedules={setDailySchedules}
       />
     </>

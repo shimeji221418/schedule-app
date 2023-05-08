@@ -20,7 +20,7 @@ const EditTeam = ({ params }: { params: { id: number } }) => {
   const auth = getAuth(app);
   const router = useRouter();
   const { showMessage } = useMessage();
-  const { loginUser, loading, setLoading } = useAuthContext();
+  const { loginUser, loading } = useAuthContext();
   const [editTeam, setEditTeam] = useState<TeamType>({
     id: 0,
     name: "",

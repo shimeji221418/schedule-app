@@ -2,14 +2,14 @@
 import { Box, Divider, Flex, Heading, Stack, Text } from "@chakra-ui/react";
 import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import InputForm from "@/components/atoms/InputForm";
-import { GetTaskType, TaskType } from "@/types/api/schedule_kind";
+import { GetTaskType } from "@/types/api/schedule_kind";
 import FormButton from "@/components/atoms/FormButton";
 import { useFormContext } from "react-hook-form";
 import { getAuth } from "firebase/auth";
 import { app } from "../../../../../../firebase";
 import { useAuthContext } from "@/provider/AuthProvider";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
-import { notFound, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
 import DeleteModal from "@/components/organisms/modal/deleteModal";
 import Loading from "@/app/loading";

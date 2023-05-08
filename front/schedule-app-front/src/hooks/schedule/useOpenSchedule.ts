@@ -1,6 +1,6 @@
 import { GetUserType } from "@/types/api/user";
 import { format } from "date-fns";
-import React, { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
 type Props = {
   onOpen: () => void;
@@ -26,12 +26,6 @@ export const useOpenSchedule = (props: Props) => {
     },
     [targetUser, targetDate]
   );
-  const openSchedule2 = useCallback(
-    (day: Date) => {
-      setTargetDate(format(day, "yyyy-MM-dd"));
-      onOpen();
-    },
-    [targetUser, targetDate]
-  );
-  return { targetDate, targetUser, openSchedule, openSchedule2 };
+
+  return { targetDate, targetUser, openSchedule };
 };

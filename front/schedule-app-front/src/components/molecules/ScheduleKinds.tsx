@@ -1,6 +1,6 @@
 import { useAuthContext } from "@/provider/AuthProvider";
 import { GetTaskType } from "@/types/api/schedule_kind";
-import { Box, Button, Flex, Link } from "@chakra-ui/react";
+import { Box, Button, Flex } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import React, { FC } from "react";
 

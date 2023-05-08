@@ -2,6 +2,7 @@ import FormButton from "@/components/atoms/FormButton";
 import InputForm from "@/components/atoms/InputForm";
 import PrimaryButton from "@/components/atoms/PrimaryButton";
 import SelectForm from "@/components/atoms/SelectForm";
+import { useMessage } from "@/hooks/useMessage";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { TeamType } from "@/types/api/team";
 import { EditUserType, GetUserType, LoginUserType } from "@/types/api/user";
@@ -56,6 +57,7 @@ const UserDetailModal: FC<Props> = memo((props) => {
     teamId: 0,
     password: "",
   });
+  const { showMessage } = useMessage();
   const { handleSubmit } = useFormContext();
   const roles = ["general", "admin"];
 
@@ -83,25 +85,33 @@ const UserDetailModal: FC<Props> = memo((props) => {
     [editUser, setEditUser]
   );
 
-  const handleEmailChange = async () => {
-    try {
-      if (auth.currentUser) {
-        const credential = EmailAuthProvider.credential(
-          auth.currentUser.email!,
-          editUser.password
-        );
-        await reauthenticateWithCredential(auth.currentUser, credential);
-        await updateEmail(auth.currentUser, editUser.email);
-      }
-    } catch (e: any) {
-      console.log(e);
-    }
-  };
+  // const handleEmailChange = async () => {
+  //   try {
+  //     if (auth.currentUser) {
+  //       const credential = EmailAuthProvider.credential(
+  //         auth.currentUser.email!,
+  //         editUser.password
+  //       );
+  //       await reauthenticateWithCredential(auth.currentUser, credential);
+  //       await updateEmail(auth.currentUser, editUser.email);
+  //     }
+  //   } catch (e: any) {
+  //     console.log(e);
+  //   }
+  // };
 
   const handleOnSubmit = () => {
     const request = async () => {
       try {
-        await handleEmailChange();
+        // await handleEmailChange();
+        if (auth.currentUser) {
+          const credential = EmailAuthProvider.credential(
+            auth.currentUser.email!,
+            editUser.password
+          );
+          await reauthenticateWithCredential(auth.currentUser, credential);
+          await updateEmail(auth.currentUser, editUser.email);
+        }
         if (auth.currentUser) {
           const token = await auth.currentUser.getIdToken(true);
           const data = {
@@ -123,9 +133,11 @@ const UserDetailModal: FC<Props> = memo((props) => {
           await BaseClientWithAuth(props);
           onClose();
           location.reload();
+          showMessage({ title: "更新しました", status: "success" });
         }
       } catch (e: any) {
         console.log(e);
+        showMessage({ title: `${e.message}`, status: "error" });
       }
     };
     request();

@@ -1,19 +1,18 @@
 "use client";
 import { app } from "../../firebase";
-import { getAuth, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import React, {
   createContext,
   Dispatch,
   FC,
   ReactNode,
   SetStateAction,
-  useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { GetUserType, LoginUserType } from "@/types/api/user";
+import { usePathname, useRouter } from "next/navigation";
+import { LoginUserType } from "@/types/api/user";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { Text } from "@chakra-ui/react";
 

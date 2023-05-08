@@ -13,7 +13,7 @@ class Schedule < ApplicationRecord
 
   def overlap_create_schedule?
     if (Schedule.where("(end_at > ? AND ?  > start_at) AND user_id = ?", self.start_at, self.end_at, self.user_id).any?)
-      errors.add(:base, "同時間帯に既に予定があります")
+       errors.add(:base, "同時間帯に既に予定があります")
     end
   end
 

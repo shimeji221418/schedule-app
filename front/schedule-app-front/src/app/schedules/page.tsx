@@ -33,7 +33,6 @@ import ScheduleKinds from "@/components/molecules/ScheduleKinds";
 import { useGetTasks } from "@/hooks/useGetTasks";
 import { useOpenSchedule } from "@/hooks/schedule/useOpenSchedule";
 import { useOpenEditSchedule } from "@/hooks/schedule/useOpenEditSchedule";
-import { useGetAllUsers } from "@/hooks/useAllUsers";
 import { useGetSchedules } from "@/hooks/useGetSchedules";
 import { ArrowLeftIcon, ArrowRightIcon } from "@chakra-ui/icons";
 
@@ -41,7 +40,6 @@ const MySchedule = () => {
   const auth = getAuth(app);
   const today: Date = new Date();
   const { isOpen, onClose, onOpen } = useDisclosure();
-  const [mode, setMode] = useState<"team" | "custom">("team");
   const { loginUser } = useAuthContext();
   const { targetDate, targetUser, openSchedule } = useOpenSchedule({ onOpen });
   const { getTeamUsers, teamUser } = useGetTeamUsers(targetUser.teamId);
@@ -234,7 +232,6 @@ const MySchedule = () => {
             setMySchedules={setMySchedules}
           />
           <EditScheduleModal
-            mode={mode}
             isOpen={isModalOpen}
             onClose={closeEditSchedule}
             tasks={tasks}

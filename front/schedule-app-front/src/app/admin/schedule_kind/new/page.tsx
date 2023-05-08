@@ -12,13 +12,7 @@ import {
 } from "@chakra-ui/react";
 import { app } from "../../../../../firebase";
 import { getAuth } from "firebase/auth";
-import React, {
-  ChangeEvent,
-  Suspense,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import { useAuthContext } from "@/provider/AuthProvider";
@@ -75,8 +69,11 @@ const Newtask = () => {
           location.reload();
         }
       } catch (e: any) {
-        console.log(e);
-        showMessage({ title: `${e.message}`, status: "error" });
+        console.log(e.response);
+        showMessage({
+          title: `${e.message}`,
+          status: "error",
+        });
       }
     };
     createScheduleKind();
@@ -121,49 +118,48 @@ const Newtask = () => {
                 </Stack>
               </form>
             </Box>
-            <Suspense>
-              <Box
-                w="xs"
-                bg="white"
-                shadow="md"
-                p={4}
-                borderRadius="md"
-                textAlign="center"
-              >
-                <Heading as="h2">インデックス一覧</Heading>
-                <Divider my={4} borderColor="gray.400" />
-                <Stack spacing={4}>
-                  {tasks.map((task) => (
-                    <Flex
-                      align="center"
+
+            <Box
+              w="xs"
+              bg="white"
+              shadow="md"
+              p={4}
+              borderRadius="md"
+              textAlign="center"
+            >
+              <Heading as="h2">インデックス一覧</Heading>
+              <Divider my={4} borderColor="gray.400" />
+              <Stack spacing={4}>
+                {tasks.map((task) => (
+                  <Flex
+                    align="center"
+                    bg={task.color}
+                    justify="space-between"
+                    px={2}
+                    py={1}
+                    borderRadius="md"
+                    key={task.id}
+                    height="auto"
+                  >
+                    <Text as="h2" fontSize={"lg"}>
+                      {task.name}
+                    </Text>
+                    <Button
+                      size="sm"
+                      padding={1}
+                      textAlign="center"
                       bg={task.color}
-                      justify="space-between"
-                      px={2}
-                      py={1}
-                      borderRadius="md"
-                      key={task.id}
-                      height="auto"
+                      color="black"
+                      onClick={() =>
+                        router.push(`/admin/schedule_kind/edit/${task.id}`)
+                      }
                     >
-                      <Text as="h2" fontSize={"lg"}>
-                        {task.name}
-                      </Text>
-                      <Button
-                        size="sm"
-                        padding={1}
-                        textAlign="center"
-                        bg={task.color}
-                        color="black"
-                        onClick={() =>
-                          router.push(`/admin/schedule_kind/edit/${task.id}`)
-                        }
-                      >
-                        編集
-                      </Button>
-                    </Flex>
-                  ))}
-                </Stack>
-              </Box>
-            </Suspense>
+                      編集
+                    </Button>
+                  </Flex>
+                ))}
+              </Stack>
+            </Box>
           </Flex>
           <Box display={"flex"} justifyContent={"center"} mt={10}>
             <PrimaryButton

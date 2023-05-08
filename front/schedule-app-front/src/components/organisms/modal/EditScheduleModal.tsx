@@ -21,7 +21,7 @@ import {
 } from "@chakra-ui/react";
 import { format } from "date-fns";
 import { app } from "../../../../firebase";
-import { getAuth, reload } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import React, {
   ChangeEvent,
   Dispatch,
@@ -41,22 +41,19 @@ import { BaseClientWithAuth, BaseClientWithAuthType } from "@/lib/api/client";
 import DeleteModal from "./deleteModal";
 import PrimaryButton from "../../atoms/PrimaryButton";
 import { useAuthContext } from "@/provider/AuthProvider";
-import { useGetSchedules } from "@/hooks/useGetSchedules";
 import { useErrorMessage } from "@/hooks/schedule/useErrorMessage";
 import ErrorMessageModal from "./ErrorMessageModal";
 import { useMessage } from "@/hooks/useMessage";
 
 type Props = {
-  mode: "team" | "custom";
-
   isOpen: boolean;
   onClose: () => void;
   schedule: scheduleType | null;
   tasks: Array<GetTaskType>;
   teamUser: Array<GetUserType>;
-  weeklySchedules: Array<scheduleType>;
+  weeklySchedules?: Array<scheduleType>;
   dailySchedules?: Array<scheduleType>;
-  setWeeklySchedules: Dispatch<SetStateAction<scheduleType[]>>;
+  setWeeklySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
   setDailySchedules?: Dispatch<SetStateAction<scheduleType[]>>;
 };
 
@@ -67,7 +64,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
     schedule,
     tasks,
     teamUser,
-    mode,
     setWeeklySchedules,
     setDailySchedules,
     weeklySchedules,
@@ -75,7 +71,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
   } = props;
   const { loading, loginUser } = useAuthContext();
   const { showMessage } = useMessage();
-  const { getSchedules } = useGetSchedules();
   const auth = getAuth(app);
   const [isDeleteModal, setIsDeleteModal] = useState(false);
   const { handleSubmit } = useFormContext();
@@ -92,7 +87,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
     useErrorMessage();
 
   const [startDay, setStartDay] = useState<string>("");
-  const [endDay, setEndDay] = useState<string>("");
 
   const [startTime, setStartTime] = useState<StartTimeType>({
     startHour: "",
@@ -104,8 +98,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
   });
 
   const isDisabled = schedule?.isLocked && schedule?.userId !== loginUser?.id;
-
-  const { allSchedules } = useGetSchedules();
 
   const handleStartTimeChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const target = e.target;
@@ -175,9 +167,6 @@ const EditScheduleModal: FC<Props> = memo((props) => {
 
   const handleStartChange = (e: ChangeEvent<HTMLInputElement>) => {
     setStartDay(e.target.value);
-    console.log(startDay);
-    console.log(editSchedule.start_at);
-    console.log(editSchedule.end_at);
   };
 
   // const handleEndChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -246,12 +235,13 @@ const EditScheduleModal: FC<Props> = memo((props) => {
               params: data,
             };
             const res = await BaseClientWithAuth(props);
-
-            const weeklyIndex = weeklySchedules.findIndex(
-              (schedule) => schedule.id === res.data.id
-            );
-            weeklySchedules[weeklyIndex] = res.data;
-            setWeeklySchedules([...weeklySchedules]);
+            if (weeklySchedules && setWeeklySchedules) {
+              const weeklyIndex = weeklySchedules.findIndex(
+                (schedule) => schedule.id === res.data.id
+              );
+              weeklySchedules[weeklyIndex] = res.data;
+              setWeeklySchedules([...weeklySchedules]);
+            }
 
             if (dailySchedules && setDailySchedules) {
               const dailyIndex = dailySchedules.findIndex(

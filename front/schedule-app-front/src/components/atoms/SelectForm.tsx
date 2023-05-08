@@ -35,7 +35,6 @@ const SelectForm: FC<Props> = memo((props) => {
     tasks,
     value,
     teamUsers,
-    isReadOnly,
     isDisabled,
   } = props;
   const {
